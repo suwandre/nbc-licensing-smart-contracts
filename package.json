@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/suwandre/nbc-licensing-smart-contracts/issues"
   },
-  "homepage": "https://github.com/suwandre/nbc-licensing-smart-contracts#readme"
+  "homepage": "https://github.com/suwandre/nbc-licensing-smart-contracts#readme",
+  "devDependencies": {
+    "hardhat": "^2.18.3"
+  }
 }
