@@ -1,5 +1,6 @@
 import { formatEther, parseEther } from "viem";
 import hre from "hardhat";
+import "@nomicfoundation/hardhat-viem";
 
 async function main() {
   const currentTimestampInSeconds = Math.round(Date.now() / 1000);

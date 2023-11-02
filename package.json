@@ -18,6 +18,8 @@
   },
   "homepage": "https://github.com/suwandre/nbc-licensing-smart-contracts#readme",
   "devDependencies": {
-    "hardhat": "^2.18.3"
+    "@nomicfoundation/hardhat-viem": "^1.0.0",
+    "hardhat": "^2.18.3",
+    "viem": "^1.18.3"
   }
 }
