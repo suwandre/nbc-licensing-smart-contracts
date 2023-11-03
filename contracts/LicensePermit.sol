@@ -6,7 +6,7 @@ import "./access/MultiOwnable.sol";
 /**
  * @dev LicensePermit defines and manages all license types.
  */
-contract LicensePermit is MultiOwnable {
+abstract contract LicensePermit is MultiOwnable {
     /**
      * @dev An instance of a license type.
      */
@@ -56,19 +56,11 @@ contract LicensePermit is MultiOwnable {
      */
     error LicenseHashNotGiven();
 
-    /// @dev NOTE: the given URLs are currently placeholders and will be replaced later on.
-    constructor() {
-        licenseTypes.push(License("Existing Asset Usage", keccak256(abi.encodePacked("Existing Asset Usage")), "https://.webapp.nbcompany.io/"));
-        licenseTypes.push(License("Asset Modification", keccak256(abi.encodePacked("Asset Modification")),"https://.webapp.nbcompany.io/"));
-        licenseTypes.push(License("New Asset Creation", keccak256(abi.encodePacked("New Asset Creation")), "https://.webapp.nbcompany.io/"));
-    }
-
     /**
      * @dev Adds a new license type.
      *
      * Requirements:
      * - the caller must be an owner.
-     * - the given URL must be different from the previous URL of that license type.
      * - the given license type must not be empty.
      * - the given license type must not already exist.
      * - the given URL must not be empty.
@@ -161,7 +153,7 @@ contract LicensePermit is MultiOwnable {
         if (bytes(newUrl).length == 0) {
             revert EmptyUrl();
         }
-        
+
         // get the index of the license to change
         uint256 indexToChange = _getIndexByLicenseHash(licenseHash);
 
