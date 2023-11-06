@@ -172,7 +172,7 @@ abstract contract LicensePermit is MultiOwnable {
     /**
      * @dev Gets the index of a license within {licenseTypes} given a {licenseHash}.
 
-     * Can be used to check whether a license exists. The index returned from this function will always increment the value by 1.
+     * Can be used to check whether a license exists. The index returned from this function will always be incremented by 1.
      * This is done so that a `0` can be returned should the queried-for license not exist.
      *
      * If {licenseHash} does not match with any of the license hashes within {licenseTypes}, an error is thrown.

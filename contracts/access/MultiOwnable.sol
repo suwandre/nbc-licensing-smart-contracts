@@ -16,7 +16,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
     // stores the address of the main owner.
     address private _mainOwner;
     // the limit of owners that can exist within `_owners`.
-    uint256 private constant MAX_OWNERS = 3;
+    uint256 private MAX_OWNERS = 3;
 
     event OwnerAdded(address indexed newOwner);
     event OwnerRemoved(address indexed removedOwner);
@@ -73,6 +73,13 @@ import "@openzeppelin/contracts/access/Ownable.sol";
      */
     function owners() public view virtual returns (address[] memory) {
         return _owners;
+    }
+
+    /**
+     * @dev Changes the max owner limit to {newLimit}.
+     */
+    function changeOwnerLimit(uint8 newLimit) public virtual onlyMainOwner {
+        MAX_OWNERS = newLimit;
     }
 
     /**
