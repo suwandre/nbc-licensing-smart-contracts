@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
-import "./access/MultiOwnable.sol";
+import "../access/MultiOwnable.sol";
 
 /**
  * @dev LicensePermit defines and manages all license types.
@@ -17,7 +17,8 @@ abstract contract LicensePermit is MultiOwnable {
         // used to ensure case sensitivity.
         bytes32 licenseHash;
         // the URL of the license that leads to the terms and conditions.
-        string url;
+        // this only contains the `skeleton`/reference version of the contract; some values here will be left blank to be filled.
+        string baseTerms;
     }
 
     // checks whether a given {licenseType} of License exists.
@@ -132,7 +133,7 @@ abstract contract LicensePermit is MultiOwnable {
     }
 
     /**
-     * @dev Changes the URL of an existing license type.
+     * @dev Changes the base terms URL of an existing license type.
      *
      * Requirements:
      * - the caller must be an owner.
@@ -141,7 +142,7 @@ abstract contract LicensePermit is MultiOwnable {
      * - the given URL must be different from the previous URL of that license type.
      * - the given URL must not be empty.
      */
-    function changeLicenseUrl(bytes32 licenseHash, string memory newUrl) public onlyOwner {
+    function changeLicenseUrl(bytes32 licenseHash, string memory newBaseTerms) public onlyOwner {
         if (!licenseExists[licenseHash]) {
             revert LicenseDoesNotExist(licenseHash);
         }
@@ -150,7 +151,7 @@ abstract contract LicensePermit is MultiOwnable {
             revert LicenseHashNotGiven();
         }
 
-        if (bytes(newUrl).length == 0) {
+        if (bytes(newBaseTerms).length == 0) {
             revert EmptyUrl();
         }
 
@@ -161,12 +162,12 @@ abstract contract LicensePermit is MultiOwnable {
         License storage licenseToChange = licenseTypes[indexToChange - 1];
 
         // check if the given URL is the same as the previous URL of that license type
-        if (keccak256(abi.encodePacked(licenseToChange.url)) == keccak256(abi.encodePacked(newUrl))) {
-            revert SameLicenseUrl(newUrl);
+        if (keccak256(abi.encodePacked(licenseToChange.baseTerms)) == keccak256(abi.encodePacked(newBaseTerms))) {
+            revert SameLicenseUrl(newBaseTerms);
         }
 
         // change the URL of the license type
-        licenseToChange.url = newUrl;
+        licenseToChange.baseTerms = newBaseTerms;
     }
 
     /**
