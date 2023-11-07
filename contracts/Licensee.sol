@@ -9,7 +9,7 @@ import "./access/MultiOwnable.sol";
  */
 contract Licensee is MultiOwnable {
     // a mapping from a licensee's address to their data.
-    mapping (address => bytes32) private licenseeData;
+    mapping (address => bytes) private licenseeData;
 
     /**
      * @dev Throws if the caller is not the owner or a licensee.
@@ -34,14 +34,14 @@ contract Licensee is MultiOwnable {
     /**
      * @dev Retrieves the licensee's data from {licenseeData}.
      */
-    function getLicenseeData(address licensee) public view onlyOwnerOrLicensee(licensee) returns (bytes32) {
+    function getLicenseeData(address licensee) public view onlyOwnerOrLicensee(licensee) returns (bytes memory) {
         return licenseeData[licensee];
     }
 
     /**
      * @dev Adds a licensee's data into {licenseeData}.
      */
-    function addLicenseeData(address licensee, bytes32 data) public virtual onlyOwner {
+    function addLicenseeData(address licensee, bytes calldata data) public virtual onlyOwner {
         licenseeData[licensee] = data;
     }
 
