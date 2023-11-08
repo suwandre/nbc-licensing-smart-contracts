@@ -57,6 +57,11 @@ abstract contract LicensePermit is MultiOwnable {
      */
     error LicenseHashNotGiven();
 
+    event LicenseAdded(string licenseType, string url);
+    event LicenseRemoved(string licenseType);
+    event LicenseUrlChanged(string licenseType, string oldUrl, string newUrl);
+
+
     /**
      * @dev Adds a new license type.
      *
@@ -88,6 +93,8 @@ abstract contract LicensePermit is MultiOwnable {
 
         // add the new pair to the {licenseExists} mapping.
         licenseExists[licenseHash] = true;
+
+        emit LicenseAdded(licenseType, url);
     }
 
     /**
@@ -128,6 +135,8 @@ abstract contract LicensePermit is MultiOwnable {
         // remove the last license from the array
         licenseTypes.pop();
 
+        emit LicenseRemoved(licenseTypes[lastLicenseIndex].licenseType);
+
         // remove the license type from the {licenseExists} mapping.
         delete licenseExists[licenseHash];
     }
@@ -165,6 +174,8 @@ abstract contract LicensePermit is MultiOwnable {
         if (keccak256(abi.encodePacked(licenseToChange.baseTerms)) == keccak256(abi.encodePacked(newBaseTerms))) {
             revert SameLicenseUrl(newBaseTerms);
         }
+
+        emit LicenseUrlChanged(licenseToChange.licenseType, licenseToChange.baseTerms, newBaseTerms);
 
         // change the URL of the license type
         licenseToChange.baseTerms = newBaseTerms;
