@@ -2,11 +2,12 @@
 pragma solidity ^0.8.22;
 
 import "./LicensePermit.sol";
+import "./Licensee.sol";
 
 /**
  * @dev BaseLicenseRegistry handles base variables and constants for {LicenseRegistry}.
  */
-abstract contract BaseLicenseRegistry is LicensePermit {
+abstract contract BaseLicenseRegistry is LicensePermit, Licensee {
     // the licensor; the address corresponds to one of NBC's addresses
     address public licensor;
 
