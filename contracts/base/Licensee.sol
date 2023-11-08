@@ -60,6 +60,15 @@ contract Licensee is MultiOwnable {
         }
     }
 
+    /**
+     * @dev Updates a licensee's data in {licenseeData}.
+     *
+     * Requirements:
+     * - the caller must be an owner.
+     * - the given licensee must exist within {licenseeData}.
+     * - the given {data} must not be empty.
+     * - the given {data} must not be the same as the data inside {licenseeData}.
+     */
     function updateLicenseeData(address licensee, bytes calldata data) public virtual onlyOwner() {
         if (licenseeData[licensee].length == 0) {
             revert LicenseeDoesntExist(licensee);
@@ -79,6 +88,9 @@ contract Licensee is MultiOwnable {
 
     /**
      * @dev Retrieves the licensee's data from {licenseeData}.
+     *
+     * Requirements:
+     * - the caller must be an owner or a licensee.
      */
     function getLicenseeData(address licensee) public view onlyOwnerOrLicensee(licensee) returns (bytes memory) {
         return licenseeData[licensee];
@@ -86,6 +98,12 @@ contract Licensee is MultiOwnable {
 
     /**
      * @dev Adds a licensee's data into {licenseeData}.
+     *
+     * Requirements:
+     * - the caller must be an owner.
+     * - the given licensee must not exist within {licenseeData}.
+     * - the given {licensee} address must not be invalid (e.g. `address(0)`).
+     * - the given {data} must not be empty.
      */
     function addLicenseeData(address licensee, bytes calldata data) public virtual onlyOwner {
         if (licenseeData[licensee].length != 0) {
@@ -106,6 +124,10 @@ contract Licensee is MultiOwnable {
 
     /**
      * @dev Removes a licensee's data from {licenseeData}.
+     *
+     * Requirements:
+     * - the caller must be an owner.
+     * - the given licensee must exist within {licenseeData}.
      */
     function removeLicenseeData(address licensee) public virtual onlyOwner {
         if (licenseeData[licensee].length == 0) {

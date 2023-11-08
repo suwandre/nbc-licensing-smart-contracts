@@ -12,9 +12,9 @@ abstract contract BaseLicenseRegistry is LicensePermit, Licensee {
     address public licensor;
 
     /**
-     * @dev a license data instance which contains the base license and its respective final terms.
+     * @dev a license data instance which contains the base license agreement and its respective final terms (before the licensee signs the agreement).
      *
-     * NOTE: {appliedTerms} contains the full applied terms of {License - baseTerms}; licensees are to use this as their main reference.
+     * NOTE: {appliedTerms} contains the full applied terms of {LicensePermit - License - baseTerms}; licensees are to use this as their main reference.
      */
     struct LicenseData {
         // the licensee (the party that is receiving the license).
