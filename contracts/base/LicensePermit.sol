@@ -182,6 +182,30 @@ abstract contract LicensePermit is MultiOwnable {
     }
 
     /**
+     * @dev Gets a license type and its respective data given the {licenseHash}.
+     *
+     * Requirements:
+     * - the given license hash must not be empty.
+     * - the given license type must exist.
+     */
+    function getLicenseType(bytes32 licenseHash) public view returns (License memory) {
+        if (licenseHash == 0) {
+            revert LicenseHashNotGiven();
+        }
+
+        // get the {License} instance
+        uint256 index = _getIndexByLicenseHash(licenseHash);
+
+        // revert if the license does not exist
+        if (index == 0) {
+            revert LicenseDoesNotExist(licenseHash);
+        }
+
+        // return the license type
+        return licenseTypes[index - 1];
+    }
+
+    /**
      * @dev Gets the index of a license within {licenseTypes} given a {licenseHash}.
 
      * Can be used to check whether a license exists. The index returned from this function will always be incremented by 1.
