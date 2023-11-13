@@ -36,6 +36,26 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
     error InvalidSignature(address recoveredAddress, address licensee);
 
     /**
+     * @dev Throws when trying to approve an application when the licensee has no applications.
+     */
+    error LicenseeNoApplications(address licensee);
+
+    /**
+     * @dev Throws when trying to approve an application when the application doesn't exist.
+     */
+    error ApplicationNotFound(address licensee, bytes32 applicationHash);
+
+    /**
+     * @dev Throws when trying to approve an application whose status is not {ApplicationStatus.Pending}.
+     */
+    error ApplicationNotPending(address licensee, bytes32 applicationHash, ApplicationStatus status);
+
+    /**
+     * @dev Throws when trying to approve an application when the licensee hasn't paid the license fee.
+     */
+    error ApplicationNotPaid(address licensee, bytes32 applicationHash);
+
+    /**
      * @dev a license application data instance which contains the final terms of the license agreement (before the licensee signs it).
      *
      * NOTE: {appliedTerms} contains the full applied terms of {LicensePermit - License - baseTerms}; licensees are to use this as their main reference.
@@ -74,12 +94,33 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
         bytes modifications;
     }
 
-    // maps from a licensee's address to all the final agreements they have signed and submitted.
-    mapping (address => FinalAgreement[]) private licenseApplications;
+    // maps from a licensee's address to all the final agreements they have signed and submitted given the application hash for each.
+    mapping (address => mapping (bytes32 => FinalAgreement)) private licenseApplications;
 
-    event ApplicationSubmitted(address indexed licensee, uint256 applicationIndex, string licenseType);
-    event ApplicationApproved(address indexed licensee, uint256 applicationIndex, string licenseType);
-    event ApplicationRejected(address indexed licensee, uint256 applicationIndex, string licenseType);
+    event ApplicationSubmitted(address indexed licensee, bytes32 applicationHash);
+    event ApplicationApproved(address indexed licensee, bytes32 applicationHash);
+    event ApplicationRejected(address indexed licensee, bytes32 applicationHash);
+
+    /**
+     * @dev Approves a licensee's application given its {_applicationHash}. Can only be called by the owner (i.e. the licensor).
+     *
+     * Requirements:
+     * - Checks if the application exists, else function reverts.
+     * - Checks if the application is pending, else function reverts.
+     * - Checks if the licensee has paid the license fee, else function reverts.
+     */
+    function approveApplication(address licensee, bytes32 _applicationHash) public onlyOwner {
+        // goes through multiple checks to ensure that some of the parameters are by default valid.
+        _approveApplicationCheck(licensee, _applicationHash);
+
+        // gets the final agreement of the application.
+        FinalAgreement storage finalAgreement = licenseApplications[licensee][_applicationHash];
+
+        finalAgreement.status = ApplicationStatus.Approved;
+        finalAgreement.licenseUsable = true;
+
+        emit ApplicationApproved(licensee, _applicationHash);
+    }
 
     /**
      * @dev (For licensees) Submits a new license application.
@@ -139,13 +180,37 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
         });
 
         // add the final agreement to the licensee's list of applications.
-        licenseApplications[_msgSender()].push(finalAgreement);
+        licenseApplications[_msgSender()][_applicationHash] = finalAgreement;
 
-        emit ApplicationSubmitted(_msgSender(), licenseApplications[_msgSender()].length - 1, license.licenseType);
+        emit ApplicationSubmitted(_msgSender(), _applicationHash);
     }
 
     /**
-     * @dev Goes through a few checks to ensure that the given parameters for {submitApplication} is valid.
+     * @dev Goes through a few checks to ensure that the given parameters for {approveApplication} are valid.
+     */
+    function _approveApplicationCheck(
+        address licensee,
+        bytes32 _applicationHash
+    ) private view {
+        FinalAgreement memory finalAgreement = licenseApplications[licensee][_applicationHash];
+
+        // this check will just revert if the application doesn't exist.
+        // since we cannot simply check for FinalAgreement(0), we try to query one field and check for its default empty value.
+        if (finalAgreement.applicationData.licensee == address(0)) {
+            revert ApplicationNotFound(licensee, _applicationHash);
+        }
+
+        if (finalAgreement.status != ApplicationStatus.Pending) {
+            revert ApplicationNotFound(licensee, _applicationHash);
+        }
+
+        if (finalAgreement.paymentPaid == false) {
+            revert ApplicationNotPaid(licensee, _applicationHash);
+        }
+    }
+
+    /**
+     * @dev Goes through a few checks to ensure that the given parameters for {submitApplication} are valid.
      */
     function _submitApplicationCheck(
         bytes32 licenseHash,
@@ -165,12 +230,8 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
         }
 
         // checks if the licensee has already submitted an application for the given license type.
-        if (licenseApplications[_msgSender()].length != 0) {
-            for (uint256 i = 0; i < licenseApplications[_msgSender()].length; i++) {
-                if (licenseApplications[_msgSender()][i].applicationData.license.licenseHash == licenseHash) {
-                    revert AlreadyAppliedForLicense(_msgSender(), licenseHash);
-                }
-            }
+        if (licenseApplications[_msgSender()][licenseHash].applicationData.license.licenseHash == licenseHash) {
+            revert AlreadyAppliedForLicense(_msgSender(), licenseHash);
         }
     }
 
