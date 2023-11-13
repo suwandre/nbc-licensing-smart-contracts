@@ -84,7 +84,7 @@ abstract contract LicensePermit is MultiOwnable {
             revert EmptyUrl();
         }
 
-        if (_getIndexByLicenseHash(licenseHash) != 0) {
+        if (getIndexByLicenseHash(licenseHash) != 0) {
             revert LicenseAlreadyExists(licenseType);
         }
 
@@ -114,7 +114,7 @@ abstract contract LicensePermit is MultiOwnable {
             revert LicenseHashNotGiven();
         }
 
-        if (_getIndexByLicenseHash(licenseHash) == 0) {
+        if (getIndexByLicenseHash(licenseHash) == 0) {
             revert LicenseDoesNotExist(licenseHash);
         }
 
@@ -124,7 +124,7 @@ abstract contract LicensePermit is MultiOwnable {
         // if the license to remove is not the last one, swap it with the last one.
         if (licenseHash != licenseTypes[lastLicenseIndex].licenseHash) {
             // get the index to remove
-            uint256 indexToRemove = _getIndexByLicenseHash(licenseHash);
+            uint256 indexToRemove = getIndexByLicenseHash(licenseHash);
             // get the last license
             License storage lastLicense = licenseTypes[lastLicenseIndex];
 
@@ -165,7 +165,7 @@ abstract contract LicensePermit is MultiOwnable {
         }
 
         // get the index of the license to change
-        uint256 indexToChange = _getIndexByLicenseHash(licenseHash);
+        uint256 indexToChange = getIndexByLicenseHash(licenseHash);
 
         // get the license to change
         License storage licenseToChange = licenseTypes[indexToChange - 1];
@@ -194,7 +194,7 @@ abstract contract LicensePermit is MultiOwnable {
         }
 
         // get the {License} instance
-        uint256 index = _getIndexByLicenseHash(licenseHash);
+        uint256 index = getIndexByLicenseHash(licenseHash);
 
         // revert if the license does not exist
         if (index == 0) {
@@ -213,7 +213,7 @@ abstract contract LicensePermit is MultiOwnable {
      *
      * If {licenseHash} does not match with any of the license hashes within {licenseTypes}, an error is thrown.
      */
-    function _getIndexByLicenseHash(bytes32 licenseHash) private view returns (uint256) {
+    function getIndexByLicenseHash(bytes32 licenseHash) internal view returns (uint256) {
         for (uint256 i = 0; i < licenseTypes.length; i++) {
             if (licenseTypes[i].licenseHash == licenseHash) {
                 // we add 1 so that the index starts at a minimum of 1 instead of 0.

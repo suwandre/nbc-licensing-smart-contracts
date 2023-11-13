@@ -64,32 +64,17 @@ abstract contract Licensee is MultiOwnable {
     event LicenseeUpdated(address indexed licensee, bytes data);
     event LicenseeStatusUpdated(address indexed licensee, LicenseeStatus status);
 
-    // a modifier that checks whether the caller is one of the owners or a licensee.
-    modifier onlyOwnerOrLicensee() {
-        _checkOwnerOrLicensee();
-        _;
-    }
-
-    // a modifier that checks whether the caller is a licensee.
-    modifier onlyLicensee() {
-        _checkLicenseeExists();
+    // a modifier that checks whether the caller a licensee.
+    modifier onlyLicensee(address toCheck) {
+        _checkLicensee(toCheck);
         _;
     }
 
     /**
-     * @dev Checks whether the caller is one of the owners or a licensee.
+     * @dev Checks whether {toCheck} has a licensee account registered (i.e. has a data in {licenseeData})
      */
-    function _checkOwnerOrLicensee() private view {
-        if (!_isOwner() || !_checkLicenseeExists()) {
-            revert NotOwnerOrLicensee(_msgSender());
-        }
-    }
-
-    /**
-     * @dev Checks whether the caller has a licensee account registered (i.e. has a data in {licenseeData})
-     */
-    function _checkLicenseeExists() private view returns (bool) {
-        if (_licenseeAccount[_msgSender()].data.length == 0) {
+    function _checkLicenseeExists(address toCheck) internal view returns (bool) {
+        if (_licenseeAccount[toCheck].data.length == 0) {
             return false;
         }
 
@@ -97,9 +82,18 @@ abstract contract Licensee is MultiOwnable {
     }
 
     /**
+     * @dev An alternative to {_checkLicenseeExists} that throws if the given {toCheck} doesn't have a licensee account registered.
+     */
+    function _checkLicensee(address toCheck) internal view {
+        if (!_checkLicenseeExists(toCheck)) {
+            revert LicenseeDoesntExist(toCheck);
+        }
+    }
+
+    /**
      * @dev Allows a user to register their wallet as a licensee.
      *
-     * Because any wallet can invoke this function, there will be checks of {data} done separately to ensure that it is of the correct format.
+     * Because any wallet can invoke this function, there will be checks of {data} to ensure that it is of the correct format.
      * This will ensure that the licensor (NBC) will only grant a licensee account to those who meet our requirements.
      *
      * Requirements:
