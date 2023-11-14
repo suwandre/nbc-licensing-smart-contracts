@@ -128,6 +128,20 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
     }
 
     /**
+     * @dev Gets the license application given the licensee's address and the application hash.
+     * Can only be called by either one of the owners or the licensee that owns the specified license application.
+     */
+    function getApplication(address licensee, bytes32 _applicationHash) 
+        public 
+        onlyOwnerOrOwnedLicensee(licensee, _applicationHash)
+        applicationExists(licensee, _applicationHash)
+        view 
+        returns (FinalAgreement memory) 
+    {
+        return licenseApplications[licensee][_applicationHash];
+    }
+
+    /**
      * @dev Approves a licensee's application given its {_applicationHash}. Can only be called by the owner (i.e. the licensor).
      *
      * NOTE: this function is invoked primarily once payment has been paid and proof of payment has been verified.
