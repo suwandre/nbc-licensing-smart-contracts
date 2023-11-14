@@ -104,10 +104,12 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
     /**
      * @dev Approves a licensee's application given its {_applicationHash}. Can only be called by the owner (i.e. the licensor).
      *
+     * NOTE: this function is invoked primarily once payment has been paid and proof of payment has been verified.
+     * Therefore, no checks to see if {FinalAgreement - paymentPaid} is true are done here.
+     *
      * Requirements:
      * - Checks if the application exists, else function reverts.
      * - Checks if the application is pending, else function reverts.
-     * - Checks if the licensee has paid the license fee, else function reverts.
      */
     function approveApplication(address licensee, bytes32 _applicationHash) public onlyOwner {
         // goes through multiple checks to ensure that some of the parameters are by default valid.
@@ -116,6 +118,7 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
         // gets the final agreement of the application.
         FinalAgreement storage finalAgreement = licenseApplications[licensee][_applicationHash];
 
+        finalAgreement.paymentPaid = true;
         finalAgreement.status = ApplicationStatus.Approved;
         finalAgreement.licenseUsable = true;
 
@@ -188,10 +191,7 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
     /**
      * @dev Goes through a few checks to ensure that the given parameters for {approveApplication} are valid.
      */
-    function _approveApplicationCheck(
-        address licensee,
-        bytes32 _applicationHash
-    ) private view {
+    function _approveApplicationCheck(address licensee, bytes32 _applicationHash) private view {
         FinalAgreement memory finalAgreement = licenseApplications[licensee][_applicationHash];
 
         // this check will just revert if the application doesn't exist.
@@ -202,10 +202,6 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
 
         if (finalAgreement.status != ApplicationStatus.Pending) {
             revert ApplicationNotFound(licensee, _applicationHash);
-        }
-
-        if (finalAgreement.paymentPaid == false) {
-            revert ApplicationNotPaid(licensee, _applicationHash);
         }
     }
 
