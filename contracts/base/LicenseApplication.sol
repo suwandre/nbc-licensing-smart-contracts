@@ -56,6 +56,11 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
     error ApplicationNotPaid(address licensee, bytes32 applicationHash);
 
     /**
+     * @dev Throws when caller is neither one of the owners nor a licensee that owns the specified license application.
+     */
+    error NotOwnerOrOwnedLicensee(address caller, bytes32 applicationHash);
+
+    /**
      * @dev a license application data instance which contains the final terms of the license agreement (before the licensee signs it).
      *
      * NOTE: {appliedTerms} contains the full applied terms of {LicensePermit - License - baseTerms}; licensees are to use this as their main reference.
@@ -100,6 +105,27 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
     event ApplicationSubmitted(address indexed licensee, bytes32 applicationHash);
     event ApplicationApproved(address indexed licensee, bytes32 applicationHash);
     event ApplicationRejected(address indexed licensee, bytes32 applicationHash);
+    event ApplicationRemoved(address indexed licensee, bytes32 applicationHash, string reason);
+
+    // this modifier checks if an application exists given the licensee's address and the application hash.
+    modifier applicationExists(address licensee, bytes32 _applicationHash) {
+        _checkApplicationExists(licensee, _applicationHash);
+        _;
+    }
+
+    // this modifier checks if an application is pending given the licensee's address and the application hash.
+    modifier applicationNotPending(address licensee, bytes32 _applicationHash) {
+        _checkApplicationPending(licensee, _applicationHash);
+        _;
+    }
+
+    // this modifier checks if the caller is either one of the owners or a licensee that owns the specified license application.
+    modifier onlyOwnerOrOwnedLicensee(address licensee, bytes32 _applicationHash) {
+        if (licenseApplications[licensee][_applicationHash].applicationData.licensee != _msgSender() && !_isOwner()) {
+            revert NotOwnerOrLicensee(_msgSender());
+        }
+        _;
+    }
 
     /**
      * @dev Approves a licensee's application given its {_applicationHash}. Can only be called by the owner (i.e. the licensor).
@@ -111,10 +137,12 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
      * - Checks if the application exists, else function reverts.
      * - Checks if the application is pending, else function reverts.
      */
-    function approveApplication(address licensee, bytes32 _applicationHash) public onlyOwner {
-        // goes through multiple checks to ensure that some of the parameters are by default valid.
-        _approveApplicationCheck(licensee, _applicationHash);
-
+    function approveApplication(address licensee, bytes32 _applicationHash) 
+        public 
+        applicationExists(licensee, _applicationHash)
+        applicationNotPending(licensee, _applicationHash) 
+        onlyOwner   
+    {
         // gets the final agreement of the application.
         FinalAgreement storage finalAgreement = licenseApplications[licensee][_applicationHash];
 
@@ -123,6 +151,41 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
         finalAgreement.licenseUsable = true;
 
         emit ApplicationApproved(licensee, _applicationHash);
+    }
+
+    /**
+     * @dev Updates the license's modifications parameter with {modifications}. Can only be called by the owner (i.e. the licensor).
+     *
+     * If the license's modifications already exist (i.e. not empty/null), then it will be overwritten by {modifications}.
+     */
+    function addModifications(address licensee, bytes32 _applicationHash, bytes calldata modifications) 
+        public 
+        applicationExists(licensee, _applicationHash)
+        onlyOwner 
+    {
+        FinalAgreement storage finalAgreement = licenseApplications[licensee][_applicationHash];
+
+        if (finalAgreement.applicationData.licensee == address(0)) {
+            revert ApplicationNotFound(licensee, _applicationHash);
+        }
+
+        finalAgreement.modifications = modifications;
+    }
+
+    /**
+     * @dev Updates the {licenseUsable} parameter of the license application to its opposite. Can only be called by the owner (i.e. the licensor).
+     * i.e. if {licenseUsable} was true, then {updateLicenseUsable} will convert it to false and vice versa.
+     *
+     * This method saves the trouble of having to create two separate functions; one to disable and one to enable.
+     */
+    function updateLicenseUsable(address licensee, bytes32 _applicationHash) 
+        public
+        applicationExists(licensee, _applicationHash)
+        onlyOwner 
+    {
+        FinalAgreement storage finalAgreement = licenseApplications[licensee][_applicationHash];
+
+        finalAgreement.licenseUsable = !finalAgreement.licenseUsable;
     }
 
     /**
@@ -189,19 +252,34 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
     }
 
     /**
-     * @dev Goes through a few checks to ensure that the given parameters for {approveApplication} are valid.
+     * @dev Removes an existing license application from {licenseApplications}. Once removed, license is no longer valid.
+     *
+     * Can be called by either one of the owners or the licensee that owns the specified license application.
      */
-    function _approveApplicationCheck(address licensee, bytes32 _applicationHash) private view {
-        FinalAgreement memory finalAgreement = licenseApplications[licensee][_applicationHash];
+    function removeApplication(address licensee, bytes32 _applicationHash, string memory reason) 
+        public 
+        applicationExists(licensee, _applicationHash)
+        onlyOwnerOrOwnedLicensee(licensee, _applicationHash)
+    {
+        delete licenseApplications[licensee][_applicationHash];
+        emit ApplicationRemoved(licensee, _applicationHash, reason);
+    }
 
-        // this check will just revert if the application doesn't exist.
-        // since we cannot simply check for FinalAgreement(0), we try to query one field and check for its default empty value.
-        if (finalAgreement.applicationData.licensee == address(0)) {
+    /**
+     * @dev Checks whether an application exists, else reverts.
+     */
+    function _checkApplicationExists(address licensee, bytes32 _applicationHash) private view {
+        if (licenseApplications[licensee][_applicationHash].applicationData.licensee == address(0)) {
             revert ApplicationNotFound(licensee, _applicationHash);
         }
+    }
 
-        if (finalAgreement.status != ApplicationStatus.Pending) {
-            revert ApplicationNotFound(licensee, _applicationHash);
+    /**
+     * @dev Checks if a given application is in a pending status, else reverts.
+     */
+    function _checkApplicationPending(address licensee, bytes32 _applicationHash) private view {
+        if (licenseApplications[licensee][_applicationHash].status != ApplicationStatus.Pending) {
+            revert ApplicationNotPending(licensee, _applicationHash, licenseApplications[licensee][_applicationHash].status);
         }
     }
 
