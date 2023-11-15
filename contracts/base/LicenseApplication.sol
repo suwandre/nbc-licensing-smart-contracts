@@ -266,7 +266,8 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
     }
 
     /**
-     * @dev Removes an existing license application from {licenseApplications}. Once removed, license is no longer valid.
+     * @dev Removes and/or terminates an existing license application from {licenseApplications}. 
+     * Once removed, license is no longer valid.
      *
      * Can be called by either one of the owners or the licensee that owns the specified license application.
      */

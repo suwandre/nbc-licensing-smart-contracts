@@ -25,17 +25,17 @@ abstract contract LicensePermit is MultiOwnable {
     mapping(bytes32 => bool) public licenseExists;
 
     // a list of all currently available license types.
-    License[] public licenseTypes;
+    License[] internal licenseTypes;
 
     /**
-     * @dev Throws if the given URL is the same as the previous URL of that license type.
+     * @dev Throws if the given base terms URL is the same as the previous base terms URL of that license type.
      */
-    error SameLicenseUrl(string url);
+    error SameLicenseTerms(string url);
 
     /**
-     * @dev Throws if the given URL is empty.
+     * @dev Throws if the given base terms URL is empty.
      */
-    error EmptyUrl();
+    error EmptyBaseTerms();
 
     /**
      * @dev Throws is the given license type is empty.
@@ -57,9 +57,9 @@ abstract contract LicensePermit is MultiOwnable {
      */
     error LicenseHashNotGiven();
 
-    event LicenseAdded(string licenseType, string url);
+    event LicenseAdded(string licenseType);
     event LicenseRemoved(string licenseType);
-    event LicenseUrlChanged(string licenseType, string oldUrl, string newUrl);
+    event LicenseTermsChanged(string licenseType);
 
 
     /**
@@ -69,10 +69,9 @@ abstract contract LicensePermit is MultiOwnable {
      * - the caller must be an owner.
      * - the given license type must not be empty.
      * - the given license type must not already exist.
-     * - the given URL must not be empty.
-     * 
+     * - the given URL must not be empty. 
      */
-    function addLicense(string calldata licenseType, string calldata url) public onlyOwner {
+    function addLicense(string calldata licenseType, string calldata baseTerms) public onlyOwner {
         // gets the hash of {licenseType}.
         bytes32 licenseHash = keccak256(abi.encodePacked(licenseType));
 
@@ -80,8 +79,8 @@ abstract contract LicensePermit is MultiOwnable {
             revert EmptyLicenseType();
         }
 
-        if (bytes(url).length == 0) {
-            revert EmptyUrl();
+        if (bytes(baseTerms).length == 0) {
+            revert EmptyBaseTerms();
         }
 
         if (getIndexByLicenseHash(licenseHash) != 0) {
@@ -89,12 +88,12 @@ abstract contract LicensePermit is MultiOwnable {
         }
 
         // add the new license type to {licenseTypes}.
-        licenseTypes.push(License(licenseType, licenseHash, url));
+        licenseTypes.push(License(licenseType, licenseHash, baseTerms));
 
         // add the new pair to the {licenseExists} mapping.
         licenseExists[licenseHash] = true;
 
-        emit LicenseAdded(licenseType, url);
+        emit LicenseAdded(licenseType);
     }
 
     /**
@@ -151,7 +150,7 @@ abstract contract LicensePermit is MultiOwnable {
      * - the given URL must be different from the previous URL of that license type.
      * - the given URL must not be empty.
      */
-    function changeLicenseUrl(bytes32 licenseHash, string memory newBaseTerms) public onlyOwner {
+    function changeLicenseTerms(bytes32 licenseHash, string memory newBaseTerms) public onlyOwner {
         if (!licenseExists[licenseHash]) {
             revert LicenseDoesNotExist(licenseHash);
         }
@@ -161,7 +160,7 @@ abstract contract LicensePermit is MultiOwnable {
         }
 
         if (bytes(newBaseTerms).length == 0) {
-            revert EmptyUrl();
+            revert EmptyBaseTerms();
         }
 
         // get the index of the license to change
@@ -172,10 +171,10 @@ abstract contract LicensePermit is MultiOwnable {
 
         // check if the given URL is the same as the previous URL of that license type
         if (keccak256(abi.encodePacked(licenseToChange.baseTerms)) == keccak256(abi.encodePacked(newBaseTerms))) {
-            revert SameLicenseUrl(newBaseTerms);
+            revert SameLicenseTerms(newBaseTerms);
         }
 
-        emit LicenseUrlChanged(licenseToChange.licenseType, licenseToChange.baseTerms, newBaseTerms);
+        emit LicenseTermsChanged(licenseToChange.licenseType);
 
         // change the URL of the license type
         licenseToChange.baseTerms = newBaseTerms;
