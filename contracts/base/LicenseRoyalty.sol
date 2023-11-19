@@ -42,6 +42,16 @@ abstract contract LicenseRoyalty is LicenseApplication {
     error UntimelyReportNotRequired(address licensee, bytes32 applicationHash, uint256 royaltyStatementIndex);
 
     /**
+     * @dev Throws when trying to increase the untimely royalty payment count when the royalty is not yet due.
+     */
+    error RoyaltyPaymentNotNeededYet(address licensee, bytes32 applicationHash, uint256 royaltyStatementIndex);
+
+    /**
+     * @dev Throws when a licensor wants to add an untimely royalty payment count when the royalty is not yet due (or not yet added)
+     */
+    error RoyaltyNoDeadline(address licensee, bytes32 applicationHash, uint256 royaltyStatementIndex);
+
+    /**
      * @dev Contains the record of a license. Primarily handles the royalty and revenue reports.
      */
     struct LicenseRecord {
@@ -77,11 +87,12 @@ abstract contract LicenseRoyalty is LicenseApplication {
     // a mapping from a licensee's address to the license application hash which contains the royalty and revenue report data record.
     mapping(address => mapping(bytes32 => LicenseRecord)) private _licenseRecord;
 
-    event RevenueReported(address licensee, bytes32 _applicationHash, uint256 royaltyStatementIndex, uint256 timestamp);
-    event RoyaltyPaid(address licensee, bytes32 _applicationHash, uint256 royaltyStatementIndex, uint256 timestamp);
-    event RevenueReportApproved(address licensee, bytes32 _applicationHash, uint256 royaltyStatementIndex, uint256 timestamp);
-    event RevenueReportChanged(address licensee, bytes32 _applicationHash, uint256 royaltyStatementIndex, uint256 timestamp);
-    event UntimelyReport(address licensee, bytes32 _applicationHash, uint256 royaltyStatementIndex, uint256 timestamp);
+    event RevenueReported(address indexed licensee, bytes32 _applicationHash, uint256 royaltyStatementIndex, uint256 timestamp);
+    event RoyaltyPaid(address indexed licensee, bytes32 _applicationHash, uint256 royaltyStatementIndex, uint256 timestamp);
+    event RevenueReportApproved(address indexed licensee, bytes32 _applicationHash, uint256 royaltyStatementIndex, uint256 timestamp);
+    event RevenueReportChanged(address indexed licensee, bytes32 _applicationHash, uint256 royaltyStatementIndex, uint256 timestamp);
+    event UntimelyReport(address indexed licensee, bytes32 _applicationHash, uint256 royaltyStatementIndex, uint256 timestamp);
+    event UntimelyRoyaltyPayment(address indexed licensee, bytes32 _applicationHash, uint256 royaltyStatementIndex, uint256 timestamp);
 
     // a modifier that checks whether a license application's report for that time period is approved already.
     modifier onlyApprovedReport(address licensee, bytes32 _applicationHash, uint256 royaltyStatementIndex) {
@@ -297,6 +308,42 @@ abstract contract LicenseRoyalty is LicenseApplication {
 
             emit UntimelyReport(licensee, _applicationHash, royaltyStatementIndex, block.timestamp);
         }
+    }
+
+    /**
+     * @dev (For licensors) Adds an untimely royalty payment count if the licensee has paid (or even not yet paid for) the royalty too late.
+     */
+    function untimelyRoyaltyPayment(address licensee, bytes32 _applicationHash, uint256 royaltyStatementIndex) 
+        public
+        onlyOwner
+        applicationExists(licensee, _applicationHash)
+        onlyApprovedApplication(licensee, _applicationHash)
+        onlyApprovedReport(licensee, _applicationHash, royaltyStatementIndex)
+    {
+        LicenseRecord storage licenseRecord = _licenseRecord[licensee][_applicationHash];
+        RoyaltyStatement storage royaltyStatement = licenseRecord.royaltyStatements[royaltyStatementIndex];
+
+        // check the {royaltyGracePeriod} of the license application.
+        uint256 royaltyGracePeriod = licenseApplications[licensee][_applicationHash].applicationData.royaltyGracePeriod;
+        // check the {royaltyPaymentFrequency} of the license application.
+        uint256 royaltyPaymentFrequency = licenseApplications[licensee][_applicationHash].applicationData.royaltyPaymentFrequency;
+
+        // check the latest royalty statement's {deadline} timestamp.
+        // if 0, revert.
+        if (royaltyStatement.deadline == 0) {
+            revert RoyaltyNoDeadline(licensee, _applicationHash, royaltyStatementIndex);
+        }
+
+        // if the latest royalty statement's {deadline} timestamp is not 0, then check if it has exceeded or is equal to {deadline} + {royaltyGracePeriod}.
+        // if it has, then add an untimely royalty payment count.
+        if ((royaltyStatement.deadline + royaltyPaymentFrequency + royaltyGracePeriod) <= block.timestamp) {
+            licenseApplications[licensee][_applicationHash].applicationData.untimelyRoyaltyPayments++;
+
+            emit UntimelyRoyaltyPayment(licensee, _applicationHash, royaltyStatementIndex, block.timestamp);
+        } else {
+            revert RoyaltyPaymentNotNeededYet(licensee, _applicationHash, royaltyStatementIndex);
+        }
+
     }
 
     /**

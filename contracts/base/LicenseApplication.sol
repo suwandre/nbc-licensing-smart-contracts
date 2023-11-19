@@ -90,6 +90,8 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
         uint256 reportGracePeriod;
         // the amount of untimely reports from the licensee during the license's duration.
         uint16 untimelyReports;
+        // the amount of untimely royalty payments from the licensee during the license's duration.
+        uint16 untimelyRoyaltyPayments;
         // the frequency (in seconds) that the licensee must pay the royalty.
         uint256 royaltyPaymentFrequency;
         // the amount of days that a licensee can be late when paying the royalty for that time period.
@@ -231,6 +233,62 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
     }
 
     /**
+     * @dev (For licensors) Updates the royalty payment frequency parameter for a license application. Can only be called by the owner (i.e. the licensor).
+     */
+    function updateRoyaltyPaymentFrequency(address licensee, bytes32 _applicationHash, uint256 royaltyPaymentFrequency) 
+        public
+        virtual
+        applicationExists(licensee, _applicationHash)
+        onlyOwner 
+    {
+        FinalAgreement storage finalAgreement = licenseApplications[licensee][_applicationHash];
+
+        finalAgreement.applicationData.royaltyPaymentFrequency = royaltyPaymentFrequency;
+    }
+
+    /**
+     * @dev (For licensors) Updates the report frequency parameter for a license application. Can only be called by the owner (i.e. the licensor).
+     */
+    function updateReportFrequency(address licensee, bytes32 _applicationHash, uint256 reportFrequency) 
+        public
+        virtual
+        applicationExists(licensee, _applicationHash)
+        onlyOwner 
+    {
+        FinalAgreement storage finalAgreement = licenseApplications[licensee][_applicationHash];
+
+        finalAgreement.applicationData.reportFrequency = reportFrequency;
+    }
+
+    /**
+     * @dev (For licensors) Updates the report grace period parameter for a license application. Can only be called by the owner (i.e. the licensor).
+     */
+    function updateReportGracePeriod(address licensee, bytes32 _applicationHash, uint256 reportGracePeriod) 
+        public
+        virtual
+        applicationExists(licensee, _applicationHash)
+        onlyOwner 
+    {
+        FinalAgreement storage finalAgreement = licenseApplications[licensee][_applicationHash];
+
+        finalAgreement.applicationData.reportGracePeriod = reportGracePeriod;
+    }
+
+    /**
+     * @dev (For licensors) Updates the royalty grace period parameter for a license application. Can only be called by the owner (i.e. the licensor).
+     */
+    function updateRoyaltyGracePeriod(address licensee, bytes32 _applicationHash, uint256 royaltyGracePeriod) 
+        public
+        virtual
+        applicationExists(licensee, _applicationHash)
+        onlyOwner 
+    {
+        FinalAgreement storage finalAgreement = licenseApplications[licensee][_applicationHash];
+
+        finalAgreement.applicationData.royaltyGracePeriod = royaltyGracePeriod;
+    }
+
+    /**
      * @dev Updates the {licenseUsable} parameter of the license application to its opposite. Can only be called by the owner (i.e. the licensor).
      * i.e. if {licenseUsable} was true, then {updateLicenseUsable} will convert it to false and vice versa.
      *
@@ -308,6 +366,7 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
                 reportGracePeriod: reportGracePeriod,
                 royaltyGracePeriod: royaltyGracePeriod,
                 untimelyReports: 0,
+                untimelyRoyaltyPayments: 0,
                 appliedTerms: appliedTerms,
                 applicationDate: block.timestamp,
                 approvedDate: 0,
