@@ -37,6 +37,11 @@ abstract contract LicenseRoyalty is LicenseApplication {
     error NewRevenueReportNotYetAllowed(address licensee, bytes32 applicationHash);
 
     /**
+     * @dev Throws when a licensor wants to add an untimely report count when the report is not yet due.
+     */
+    error UntimelyReportNotRequired(address licensee, bytes32 applicationHash, uint256 royaltyStatementIndex);
+
+    /**
      * @dev Contains the record of a license. Primarily handles the royalty and revenue reports.
      */
     struct LicenseRecord {
@@ -76,6 +81,7 @@ abstract contract LicenseRoyalty is LicenseApplication {
     event RoyaltyPaid(address licensee, bytes32 _applicationHash, uint256 royaltyStatementIndex, uint256 timestamp);
     event RevenueReportApproved(address licensee, bytes32 _applicationHash, uint256 royaltyStatementIndex, uint256 timestamp);
     event RevenueReportChanged(address licensee, bytes32 _applicationHash, uint256 royaltyStatementIndex, uint256 timestamp);
+    event UntimelyReport(address licensee, bytes32 _applicationHash, uint256 royaltyStatementIndex, uint256 timestamp);
 
     // a modifier that checks whether a license application's report for that time period is approved already.
     modifier onlyApprovedReport(address licensee, bytes32 _applicationHash, uint256 royaltyStatementIndex) {
@@ -242,6 +248,55 @@ abstract contract LicenseRoyalty is LicenseApplication {
 
         // set the {paidTimestamp} property of the royalty statement to now.
         royaltyStatement.paidTimestamp = block.timestamp;
+    }
+
+    /**
+     * @dev (For licensors) Adds an untimely report count if the licensee has submitted an report too late.
+     * If it's not too late, the function reverts.
+     */
+    function untimelyReport(address licensee, bytes32 _applicationHash, uint256 royaltyStatementIndex) 
+        public
+        onlyOwner
+        applicationExists(licensee, _applicationHash)
+        onlyApprovedApplication(licensee, _applicationHash)
+    {
+        LicenseRecord storage licenseRecord = _licenseRecord[licensee][_applicationHash];
+        RoyaltyStatement storage royaltyStatement = licenseRecord.royaltyStatements[royaltyStatementIndex];
+
+        // check the {reportGracePeriod} of the license application.
+        uint256 reportGracePeriod = licenseApplications[licensee][_applicationHash].applicationData.reportGracePeriod;
+        // check the {reportFrequency} of the license application.
+        uint256 reportFrequency = licenseApplications[licensee][_applicationHash].applicationData.reportFrequency;
+
+        // check the latest royalty statement's {submitted} timestamp.
+        // if 0, check {approvedDate}, add {reportFrequency} + {reportGracePeriod} to it, and check if it has exceeded or is equal to now.
+        // if it has, then add an untimely report count.
+        // for further explanation:
+        // report frequency is the frequency in seconds that the licensee is required to submit a revenue report.
+        // report grace period is the grace period in seconds that the licensee is allowed to submit a revenue report after the report frequency has passed (i.e. how many seconds until it's considered late).
+        // if the licensee submits a report after the report frequency period but is still within the grace period, then it is considered a timely report.
+        // if the licensee submits a report after the report frequency period and after the grace period, then it is considered an untimely report.
+        if (royaltyStatement.submitted == 0) {
+            uint256 approvedDate = licenseApplications[licensee][_applicationHash].applicationData.approvedDate;
+
+            if ((approvedDate + reportFrequency + reportGracePeriod) <= block.timestamp) {
+                licenseApplications[licensee][_applicationHash].applicationData.untimelyReports++;
+            } else {
+                revert UntimelyReportNotRequired(licensee, _applicationHash, royaltyStatementIndex);
+            }
+
+            emit UntimelyReport(licensee, _applicationHash, royaltyStatementIndex, block.timestamp);
+        } else {
+            // if the latest royalty statement's {submitted} timestamp is not 0, then check if it has exceeded or is equal to {submitted} + {reportGracePeriod}.
+            // if it has, then add an untimely report count.
+            if ((royaltyStatement.submitted + reportFrequency + reportGracePeriod) <= block.timestamp) {
+                licenseApplications[licensee][_applicationHash].applicationData.untimelyReports++;
+            } else {
+                revert UntimelyReportNotRequired(licensee, _applicationHash, royaltyStatementIndex);
+            }
+
+            emit UntimelyReport(licensee, _applicationHash, royaltyStatementIndex, block.timestamp);
+        }
     }
 
     /**

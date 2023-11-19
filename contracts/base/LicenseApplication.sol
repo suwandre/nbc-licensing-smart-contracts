@@ -83,18 +83,17 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
         uint256 licenseFee;
         // the URL that leads to the applied terms.
         string appliedTerms;
-        // the frequency (in days) that the licensee must submit a revenue report.
+        // the frequency (in seconds) that the licensee must submit a revenue report.
         // this will take effect the moment the license is approved.
-        uint16 reportFrequency;
-        // the amount of days that a licensee can be late when submitting a report.
-        uint8 reportGracePeriod;
+        uint256 reportFrequency;
+        // the amount of seconds that a licensee can be late when submitting a report.
+        uint256 reportGracePeriod;
         // the amount of untimely reports from the licensee during the license's duration.
         uint16 untimelyReports;
-        // the frequency/installment count of royalty payments per license period.
-        // for instance, if the license period is 1 year and the royalty payment frequency is 4, then the licensee must pay the royalty due per quarter.
-        uint8 royaltyPaymentFrequency;
+        // the frequency (in seconds) that the licensee must pay the royalty.
+        uint256 royaltyPaymentFrequency;
         // the amount of days that a licensee can be late when paying the royalty for that time period.
-        uint8 royaltyGracePeriod;
+        uint256 royaltyGracePeriod;
         // the date when the application was submitted (in unix timestamp).
         uint256 applicationDate;
         // the date when the application was approved (in unix timestamp).
@@ -264,10 +263,10 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
     function submitApplication(
         License memory license,
         uint256 licenseFee,
-        uint16 reportFrequency,
-        uint8 royaltyPaymentFrequency,
-        uint8 reportGracePeriod,
-        uint8 royaltyGracePeriod,
+        uint256 reportFrequency,
+        uint256 royaltyPaymentFrequency,
+        uint256 reportGracePeriod,
+        uint256 royaltyGracePeriod,
         string calldata appliedTerms,
         uint256 expirationDate,
         bytes calldata signature,
@@ -397,10 +396,10 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
         bytes32 licenseHash,
         uint256 licenseFee,
         string memory appliedTerms,
-        uint16 reportFrequency,
-        uint16 royaltyPaymentFrequency,
-        uint8 reportGracePeriod,
-        uint8 royaltyGracePeriod,
+        uint256 reportFrequency,
+        uint256 royaltyPaymentFrequency,
+        uint256 reportGracePeriod,
+        uint256 royaltyGracePeriod,
         uint256 expirationDate,
         bytes memory modifications,
         string memory hashSalt
