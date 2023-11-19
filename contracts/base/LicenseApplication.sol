@@ -10,6 +10,10 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
  * @dev LicenseApplication handles all license applications.
  */
 abstract contract LicenseApplication is LicensePermit, Licensee {
+    // the next application's id.
+    // will always increment upwards and will never reset in case an application is removed.
+    uint256 private _nextApplicationIndex;
+
     /**
      * @dev Lists all possible application statuses.
      */
@@ -61,6 +65,11 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
     error NotOwnerOrOwnedLicensee(address caller, bytes32 applicationHash);
 
     /**
+     * @dev Throws when trying to edit an application that is not approved.
+     */
+    error ApplicationNotApproved(address licensee, bytes32 applicationHash);
+
+    /**
      * @dev a license application data instance which contains the final terms of the license agreement (before the licensee signs it).
      *
      * NOTE: {appliedTerms} contains the full applied terms of {LicensePermit - License - baseTerms}; licensees are to use this as their main reference.
@@ -74,6 +83,23 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
         uint256 licenseFee;
         // the URL that leads to the applied terms.
         string appliedTerms;
+        // the frequency (in days) that the licensee must submit a revenue report.
+        // this will take effect the moment the license is approved.
+        uint16 reportFrequency;
+        // the amount of days that a licensee can be late when submitting a report.
+        uint8 reportGracePeriod;
+        // the amount of untimely reports from the licensee during the license's duration.
+        uint16 untimelyReports;
+        // the frequency/installment count of royalty payments per license period.
+        // for instance, if the license period is 1 year and the royalty payment frequency is 4, then the licensee must pay the royalty due per quarter.
+        uint8 royaltyPaymentFrequency;
+        // the amount of days that a licensee can be late when paying the royalty for that time period.
+        uint8 royaltyGracePeriod;
+        // the date when the application was submitted (in unix timestamp).
+        uint256 applicationDate;
+        // the date when the application was approved (in unix timestamp).
+        // pending and rejected applications will have this set to 0.
+        uint256 approvedDate;
         // the license's expiration date (in unix timestamp).
         uint256 expirationDate;
     }
@@ -84,6 +110,8 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
      * NOTE: Only applications with a status of {ApplicationStatus.Approved} will be eligible for license usage.
      */
     struct FinalAgreement {
+        // the application ID. starts from 1 and increments by 1 for each new application.
+        uint256 id;
         // the application data instance
         ApplicationData applicationData;
         // the signature containing the {ApplicationData} instance signed by the licensee.
@@ -100,7 +128,7 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
     }
 
     // maps from a licensee's address to all the final agreements they have signed and submitted given the application hash for each.
-    mapping (address => mapping (bytes32 => FinalAgreement)) private licenseApplications;
+    mapping (address => mapping (bytes32 => FinalAgreement)) internal licenseApplications;
 
     event ApplicationSubmitted(address indexed licensee, bytes32 applicationHash);
     event ApplicationApproved(address indexed licensee, bytes32 applicationHash);
@@ -125,6 +153,20 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
             revert NotOwnerOrLicensee(_msgSender());
         }
         _;
+    }
+
+    modifier onlyApprovedApplication(address licensee, bytes32 _applicationHash) {
+        if (licenseApplications[licensee][_applicationHash].status != ApplicationStatus.Approved) {
+            revert ApplicationNotApproved(licensee, _applicationHash);
+        }
+        _;
+    }
+
+    /**
+     * @dev Gets the next application index to be used for the next application.
+     */
+    function nextApplicationIndex() internal view returns (uint256) {
+        return _nextApplicationIndex;
     }
 
     /**
@@ -152,7 +194,8 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
      * - Checks if the application is pending, else function reverts.
      */
     function approveApplication(address licensee, bytes32 _applicationHash) 
-        public 
+        public
+        virtual
         applicationExists(licensee, _applicationHash)
         applicationNotPending(licensee, _applicationHash) 
         onlyOwner   
@@ -162,6 +205,7 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
 
         finalAgreement.paymentPaid = true;
         finalAgreement.status = ApplicationStatus.Approved;
+        finalAgreement.applicationData.approvedDate = block.timestamp;
         finalAgreement.licenseUsable = true;
 
         emit ApplicationApproved(licensee, _applicationHash);
@@ -173,7 +217,8 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
      * If the license's modifications already exist (i.e. not empty/null), then it will be overwritten by {modifications}.
      */
     function addModifications(address licensee, bytes32 _applicationHash, bytes calldata modifications) 
-        public 
+        public
+        virtual
         applicationExists(licensee, _applicationHash)
         onlyOwner 
     {
@@ -194,6 +239,7 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
      */
     function updateLicenseUsable(address licensee, bytes32 _applicationHash) 
         public
+        virtual
         applicationExists(licensee, _applicationHash)
         onlyOwner 
     {
@@ -218,12 +264,16 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
     function submitApplication(
         License memory license,
         uint256 licenseFee,
+        uint16 reportFrequency,
+        uint8 royaltyPaymentFrequency,
+        uint8 reportGracePeriod,
+        uint8 royaltyGracePeriod,
         string calldata appliedTerms,
         uint256 expirationDate,
         bytes calldata signature,
         bytes calldata modifications,
         string memory hashSalt
-    ) public onlyLicensee(_msgSender()) {
+    ) public virtual onlyLicensee(_msgSender()) {
         // goes through multiple checks to ensure that some of the parameters are by default valid.
         _submitApplicationCheck(license.licenseHash, licenseFee, expirationDate);
 
@@ -232,6 +282,10 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
             license.licenseHash,
             licenseFee,
             appliedTerms,
+            reportFrequency,
+            royaltyPaymentFrequency,
+            reportGracePeriod,
+            royaltyGracePeriod,
             expirationDate,
             modifications,
             hashSalt
@@ -245,11 +299,19 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
         }
 
         FinalAgreement memory finalAgreement = FinalAgreement({
+            id: nextApplicationIndex(),
             applicationData: ApplicationData({
                 licensee: _msgSender(),
                 license: license,
                 licenseFee: licenseFee,
+                reportFrequency: reportFrequency,
+                royaltyPaymentFrequency: royaltyPaymentFrequency,
+                reportGracePeriod: reportGracePeriod,
+                royaltyGracePeriod: royaltyGracePeriod,
+                untimelyReports: 0,
                 appliedTerms: appliedTerms,
+                applicationDate: block.timestamp,
+                approvedDate: 0,
                 expirationDate: expirationDate
             }),
             signature: signature,
@@ -262,7 +324,10 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
         // add the final agreement to the licensee's list of applications.
         licenseApplications[_msgSender()][_applicationHash] = finalAgreement;
 
-        emit ApplicationSubmitted(_msgSender(), _applicationHash);
+        unchecked {
+            emit ApplicationSubmitted(_msgSender(), _applicationHash);
+            _nextApplicationIndex++;
+        }
     }
 
     /**
@@ -273,6 +338,7 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
      */
     function removeApplication(address licensee, bytes32 _applicationHash, string memory reason) 
         public 
+        virtual
         applicationExists(licensee, _applicationHash)
         onlyOwnerOrOwnedLicensee(licensee, _applicationHash)
     {
@@ -331,6 +397,10 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
         bytes32 licenseHash,
         uint256 licenseFee,
         string memory appliedTerms,
+        uint16 reportFrequency,
+        uint16 royaltyPaymentFrequency,
+        uint8 reportGracePeriod,
+        uint8 royaltyGracePeriod,
         uint256 expirationDate,
         bytes memory modifications,
         string memory hashSalt
@@ -339,6 +409,10 @@ abstract contract LicenseApplication is LicensePermit, Licensee {
             licenseHash,
             licenseFee,
             appliedTerms,
+            reportFrequency,
+            royaltyPaymentFrequency,
+            reportGracePeriod,
+            royaltyGracePeriod,
             expirationDate,
             modifications,
             hashSalt
