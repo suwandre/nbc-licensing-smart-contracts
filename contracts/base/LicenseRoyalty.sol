@@ -343,7 +343,6 @@ abstract contract LicenseRoyalty is LicenseApplication {
         } else {
             revert RoyaltyPaymentNotNeededYet(licensee, _applicationHash, royaltyStatementIndex);
         }
-
     }
 
     /**

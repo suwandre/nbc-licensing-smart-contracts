@@ -70,6 +70,16 @@ abstract contract Licensee is MultiOwnable {
         _;
     }
 
+    // a modifier that checks whether the caller is either a licensee or an owner.
+    modifier onlyLicenseeOrOwner(address toCheck) {
+        bool toCheckIsLicensee = _checkLicenseeExists(toCheck);
+        bool toCheckIsOwner = _isOwner();
+
+        if (!toCheckIsLicensee && !toCheckIsOwner) {
+            revert NotOwnerOrLicensee(toCheck);
+        }
+    }
+
     /**
      * @dev Checks whether {toCheck} has a licensee account registered (i.e. has a data in {licenseeData})
      */
@@ -88,6 +98,20 @@ abstract contract Licensee is MultiOwnable {
         if (!_checkLicenseeExists(toCheck)) {
             revert LicenseeDoesntExist(toCheck);
         }
+    }
+
+    /**
+     * @dev Gets the licensee account of {licensee}. Can only be called by the owner.
+     */
+    function getLicenseeAccountDev(address licensee) public view onlyOwner returns (LicenseeAccount memory) {
+        return _licenseeAccount[licensee];
+    }
+
+    /**
+     * @dev Gets the licensee account of the caller.
+     */
+    function getLicenseeAccount() public view onlyLicenseeOrOwner(_msgSender()) returns (LicenseeAccount memory) {
+        return _licenseeAccount[_msgSender()];
     }
 
     /**
