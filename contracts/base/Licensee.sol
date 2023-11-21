@@ -169,6 +169,40 @@ abstract contract Licensee is MultiOwnable, ILicensee, ILicenseeErrors {
     }
 
     /**
+     * @dev Removes the caller's licensee account.
+     *
+     * Requirements:
+     * - The caller must have a licensee account registered within {_licenseeAccount}.
+     */
+    function removeAccount() external virtual onlyLicensee {
+        delete _licenseeAccount[_msgSender()];
+    }
+
+    /**
+     * @dev Batch removes a list of registered accounts.
+     *
+     * Requirements:
+     * - The caller must be an owner.
+     * - The given {licensees} must exist within {_licenseeAccount}.
+     *
+     * NOTE: As this is a batch execution, this function doesn't revert if any of the checks fail.
+     * Instead, that specific licensee will be skipped.
+     */
+    function removeAccounts(address[] calldata licensees) external virtual onlyOwner {
+        for (uint256 i = 0; i < licensees.length; i++) {
+            address licensee = licensees[i];
+
+            if (_licenseeAccount[licensee].data.length == 0) {
+                continue;
+            }
+
+            delete _licenseeAccount[licensee];
+        }
+
+        emit LicenseesRemoved(licensees, block.timestamp);
+    }
+
+    /**
      * @dev Checks whether the caller is a licensee.
      *
      * In order for the caller to be a licensee (regardless of account status), {LicenseeAccount - data} must NOT be empty (i.e. length != 0).
