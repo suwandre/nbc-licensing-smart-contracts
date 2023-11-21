@@ -2,26 +2,13 @@
 pragma solidity ^0.8.22;
 
 import "../access/MultiOwnable.sol";
+import "../interfaces/ILicensee.sol";
 import "../errors/LicenseErrors.sol";
 
 /**
  * @dev Licensee account and data operations.
  */
-abstract contract Licensee is MultiOwnable, ILicenseeErrors {
-    // a licensee's account status upon registration.
-    enum AccountStatus { Pending, Approved, Rejected }
-
-    /**
-     * @dev A licensee's account data.
-     */
-    struct LicenseeAccount {
-        // the licensee's data.
-        bytes data;
-        // the status of the licensee's account.
-        // NOTE: only {AccountStatus.Approved} accounts can be used to apply for a license.
-        AccountStatus status;
-    }
-
+abstract contract Licensee is MultiOwnable, ILicensee, ILicenseeErrors {
     // a mapping from a licensee's address to their account data.
     mapping (address => LicenseeAccount) private _licenseeAccount;
 
