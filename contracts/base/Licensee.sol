@@ -78,6 +78,7 @@ abstract contract Licensee is MultiOwnable {
         if (!toCheckIsLicensee && !toCheckIsOwner) {
             revert NotOwnerOrLicensee(toCheck);
         }
+        _;
     }
 
     /**
