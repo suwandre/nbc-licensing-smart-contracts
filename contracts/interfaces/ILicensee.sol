@@ -21,7 +21,6 @@ interface ILicensee {
     function getAccount() external view returns (LicenseeAccount memory);
     function registerAccount(bytes calldata data) external;
     function approveAccounts(address[] memory licensees) external;
-    function rejectAccounts(address[] memory licensees) external;
     function updateAccountData(address[] memory licensees, bytes[] calldata data) external;
     function removeAccounts(address[] memory licensees) external;
 }

@@ -12,10 +12,10 @@ abstract contract Licensee is MultiOwnable, ILicensee, ILicenseeErrors {
     // a mapping from a licensee's address to their account data.
     mapping (address => LicenseeAccount) private _licenseeAccount;
 
-    event LicenseeAdded(address indexed newLicensee, uint256 timestamp);
-    event LicenseeRemoved(address indexed removedLicensee, uint256 timestamp);
-    event LicenseeUpdated(address indexed licensee, bytes data, uint256 timestamp);
-    event LicenseeStatusUpdated(address indexed licensee, bool usable, uint256 timestamp);
+    event LicenseeRegistered(address indexed newLicensee, uint256 timestamp);
+    event LicenseesRemoved(address[] indexed removedLicensee, uint256 timestamp);
+    event LicenseesUpdated(address[] indexed licensee, bytes[] data, uint256 timestamp);
+    event LicenseeStatusesUpdated(address[] indexed licensee, bool usable, uint256 timestamp);
 
     // a modifier that checks whether the caller is a licensee.
     modifier onlyLicensee() {
@@ -74,7 +74,7 @@ abstract contract Licensee is MultiOwnable, ILicensee, ILicenseeErrors {
 
         _licenseeAccount[_msgSender()] = licenseeAccount;
 
-        emit LicenseeAdded(_msgSender(), block.timestamp);
+        emit LicenseeRegistered(_msgSender(), block.timestamp);
     }
 
     /**
@@ -102,7 +102,70 @@ abstract contract Licensee is MultiOwnable, ILicensee, ILicenseeErrors {
 
         _licenseeAccount[user] = licenseeAccount;
 
-        emit LicenseeAdded(user, block.timestamp);
+        emit LicenseeRegistered(user, block.timestamp);
+    }
+
+    /**
+     * @dev Batch approves a list of registered accounts.
+     *
+     * Requirements:
+     * - The caller must be an owner.
+     * - The given {licensees} must exist within {_licenseeAccount}.
+     * - The given {licensees}'s {usable} field must be false.
+     * 
+     * NOTE: As this is a batch execution, this function doesn't revert if any of the checks fail.
+     * Instead, that specific licensee will be skipped.
+     */
+    function approveAccounts(address[] calldata licensees) external virtual onlyOwner {
+        for (uint256 i = 0; i < licensees.length; i++) {
+            address licensee = licensees[i];
+
+            if (_licenseeAccount[licensee].data.length == 0) {
+                continue;
+            }
+
+            if (_licenseeAccount[licensee].usable) {
+                continue;
+            }
+
+            _licenseeAccount[licensee].usable = true;
+        }
+
+        emit LicenseeStatusesUpdated(licensees, true, block.timestamp);
+    }
+
+    /**
+     * @dev Batch updates the {data} field of a list of registered accounts.
+     *
+     * Requirements:
+     * - The caller must be an owner.
+     * - The given {licensees} must exist within {_licenseeAccount}.
+     * - The given {data} for each licensee must not be empty.
+     * - The given {data} for each licensee must be different from their current {data}.
+     *
+     * NOTE: As this is a batch execution, this function doesn't revert if any of the checks fail.
+     * Instead, that specific licensee will be skipped.
+     */
+    function updateAccounts(address[] calldata licensees, bytes[] calldata data) external virtual onlyOwner {
+        for (uint256 i = 0; i < licensees.length; i++) {
+            address licensee = licensees[i];
+
+            if (_licenseeAccount[licensee].data.length == 0) {
+                continue;
+            }
+
+            if (data[i].length == 0) {
+                continue;
+            }
+
+            if (keccak256(abi.encodePacked(_licenseeAccount[licensee].data)) == keccak256(abi.encodePacked(data[i]))) {
+                continue;
+            }
+
+            _licenseeAccount[licensee].data = data[i];
+        }
+
+        emit LicenseesUpdated(licensees, data, block.timestamp);
     }
 
     /**
