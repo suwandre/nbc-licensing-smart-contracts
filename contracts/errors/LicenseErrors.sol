@@ -23,7 +23,7 @@ interface ILicenseeErrors {
     /**
      * @dev Throws if the given licensee data is empty.
      */
-    error LicenseeDataIsEmpty();
+    error EmptyLicenseeData();
 
     /**
      * @dev Throws if the given {data} is the same as the data inside the {Licensee - _licenseeAccount} instance.

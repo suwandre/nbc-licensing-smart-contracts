@@ -8,17 +8,15 @@ import "../access/MultiOwnable.sol";
  * @dev Licensee handles all licensees' data.
  */
 abstract contract Licensee is MultiOwnable {
-    // lists all possible statuses when registering for a licensee account.
-    enum LicenseeStatus { Pending, Approved, Rejected }
-
     struct LicenseeAccount {
         // the licensee's address.
         address licensee;
         // the licensee's data.
         bytes data;
-        // the status of the licensee's account.
-        // NOTE: only {LicenseeStatus.Approved} accounts can be used to apply for a license.
-        LicenseeStatus status;
+        // if the licensee account is usable.
+        // NOTE: after account registration, {usable} will automatically be set to false until approved by the licensor.
+        // only usable accounts can have full access (e.g. applying for a license).
+        bool usable;
     }
 
     // mapping from a licensee's address to their account data.
@@ -62,7 +60,7 @@ abstract contract Licensee is MultiOwnable {
     event LicenseeAdded(address indexed newLicensee);
     event LicenseeRemoved(address indexed removedLicensee);
     event LicenseeUpdated(address indexed licensee, bytes data);
-    event LicenseeStatusUpdated(address indexed licensee, LicenseeStatus status);
+    event LicenseeUsableUpdated(address indexed licensee, bool usable);
 
     // a modifier that checks whether the caller a licensee.
     modifier onlyLicensee(address toCheck) {
@@ -125,7 +123,7 @@ abstract contract Licensee is MultiOwnable {
      * - the licensee account must not already exist within {_licenseeAccount}.
      * - the given {data} must not be empty.
      *
-     * NOTE: All newly registered accounts will automatically receive a status of {LicenseeStatus.Pending}.
+     * NOTE: All newly registered accounts will automatically receive a {usable} field of false.
      */
     function registerLicenseeAccount(
         bytes calldata data
@@ -141,7 +139,7 @@ abstract contract Licensee is MultiOwnable {
         LicenseeAccount memory licenseeAccount = LicenseeAccount({
             licensee: _msgSender(),
             data: data,
-            status: LicenseeStatus.Pending
+            usable: false
         });
 
         _licenseeAccount[_msgSender()] = licenseeAccount;
