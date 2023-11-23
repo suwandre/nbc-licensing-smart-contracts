@@ -100,6 +100,8 @@ abstract contract Permit is MultiOwnable, IPermit, IPermitErrors {
         }
 
         _license[licenseHash] = newTerms;
+
+        emit LicenseTermsChanged(licenseHash, newTerms, block.timestamp);
     }
 
     /**
