@@ -2,7 +2,7 @@
 pragma solidity ^0.8.22;
 
 /**
- * @dev Interface of {Licensee}. Contains all relevant methods for the {Licensee} contract.
+ * @dev Interface of {Licensee}. Contains all relevant function signatures and methods for the {Licensee} contract.
  */
 interface ILicensee {
     /**
@@ -24,4 +24,3 @@ interface ILicensee {
     function updateAccountData(address[] memory licensees, bytes[] calldata data) external;
     function removeAccounts(address[] memory licensees) external;
 }
-
