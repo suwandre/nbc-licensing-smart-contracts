@@ -12,11 +12,6 @@ abstract contract Licensee is MultiOwnable, ILicensee, ILicenseeErrors {
     // a mapping from a licensee's address to their account data.
     mapping (address => LicenseeAccount) private _licenseeAccount;
 
-    event LicenseeRegistered(address indexed newLicensee, uint256 timestamp);
-    event LicenseesRemoved(address[] indexed removedLicensee, uint256 timestamp);
-    event LicenseesUpdated(address[] indexed licensee, bytes[] data, uint256 timestamp);
-    event LicenseeStatusesUpdated(address[] indexed licensee, bool usable, uint256 timestamp);
-
     // a modifier that checks whether the caller is a licensee.
     modifier onlyLicensee() {
         _checkLicensee(_msgSender());

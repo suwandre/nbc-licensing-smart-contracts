@@ -5,6 +5,11 @@ pragma solidity ^0.8.22;
  * @dev Interface of {Licensee}. Contains all relevant function signatures and methods for the {Licensee} contract.
  */
 interface ILicensee {
+    event LicenseeRegistered(address indexed newLicensee, uint256 timestamp);
+    event LicenseesRemoved(address[] indexed removedLicensee, uint256 timestamp);
+    event LicenseesUpdated(address[] indexed licensee, bytes[] data, uint256 timestamp);
+    event LicenseeStatusesUpdated(address[] indexed licensee, bool usable, uint256 timestamp);
+
     /**
      * @dev A licensee's account data.
      */

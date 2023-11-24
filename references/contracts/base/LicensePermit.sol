@@ -57,11 +57,6 @@ abstract contract LicensePermit is MultiOwnable {
      */
     error LicenseHashNotGiven();
 
-    event LicenseAdded(string licenseType);
-    event LicenseRemoved(string licenseType);
-    event LicenseTermsChanged(string licenseType);
-
-
     /**
      * @dev Adds a new license type.
      *

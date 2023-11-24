@@ -5,7 +5,10 @@ pragma solidity ^0.8.22;
  * @dev Interface of {Permit}. Contains all relevant function signatures and methods for the {Permit} contract.
  */
 interface IPermit {
-    // function licenseExists(bytes32 licenseHash) external view returns (bool);
+    event LicenseAdded(string licenseType);
+    event LicenseRemoved(string licenseType);
+    event LicenseTermsChanged(string licenseType);
+
     function addLicense(bytes32 licenseHash, string calldata baseTerms) external;
     function removeLicense(bytes32 licenseHash) external;
     function changeLicenseTerms(bytes32 licenseHash, string calldata newTerms) external;
