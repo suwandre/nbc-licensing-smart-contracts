@@ -75,3 +75,48 @@ interface IPermitErrors {
      */
     error LicenseAlreadyExists(bytes32 licenseHash);
 }
+
+/**
+ * @dev All errors related to the {Application} contract.
+ */
+interface IApplicationErrors {
+    /**
+     * @dev Throws if an invalid license fee is given.
+     */
+    error InvalidLicenseFee(uint256 licenseFee);
+
+    /**
+     * @dev Throws if an invalid expiration date is given.
+     */
+    error InvalidExpirationDate(uint256 expirationDate);
+
+    /**
+     * @dev Throws if the licensee applies for a license type that they already have applied for currently.
+     */
+    error AlreadyAppliedForLicense(address licensee, bytes32 licenseHash);
+
+    /**
+     * @dev Throws if the recovered address via {ECDSA - recover} doesn't match the licensee's address.
+     */
+    error InvalidSignature(address recoveredAddress, address licensee);
+
+    /**
+     * @dev Throws when trying to approve an application when the licensee has no applications.
+     */
+    error LicenseeNoApplications(address licensee);
+
+    /**
+     * @dev Throws when trying to approve an application when the application doesn't exist.
+     */
+    error ApplicationNotFound(address licensee, bytes32 applicationHash);
+
+    /**
+     * @dev Throws when trying to approve an application when the licensee hasn't paid the license fee.
+     */
+    error ApplicationNotPaid(address licensee, bytes32 applicationHash);
+
+    /**
+     * @dev Throws when caller is neither one of the owners nor a licensee that owns the specified license application.
+     */
+    error NotOwnerOrOwnedLicensee(address caller, bytes32 applicationHash);
+}
