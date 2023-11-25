@@ -10,7 +10,7 @@ import "../errors/LicenseErrors.sol";
  */
 abstract contract Licensee is MultiOwnable, ILicensee, ILicenseeErrors {
     // a mapping from a licensee's address to their account data.
-    mapping (address => LicenseeAccount) private _licenseeAccount;
+    mapping(address => LicenseeAccount) private _licenseeAccount;
 
     // a modifier that checks whether the caller is a licensee.
     modifier onlyLicensee() {

@@ -10,7 +10,7 @@ import "../interfaces/IPermit.sol";
  */
 abstract contract Permit is MultiOwnable, IPermit, IPermitErrors {
     // a mapping from a license's hash to its base terms URL.
-    mapping (bytes32 => string) private _license;
+    mapping(bytes32 => string) private _license;
 
     event LicenseAdded(bytes32 indexed licenseHash, uint256 timestamp);
     event LicenseRemoved(bytes32 indexed licenseHash, uint256 timestamp);

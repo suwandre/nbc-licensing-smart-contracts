@@ -15,7 +15,7 @@ abstract contract MultiOwnable is Context {
     address private _mainOwner;
 
     // checks if an address is an owner (incl. the main owner).
-    mapping (address => bool) private _isOwner;
+    mapping(address => bool) private _isOwner;
 
     event OwnerAdded(address indexed newOwner, uint256 timestamp);
     event OwnerRemoved(address indexed removedOwner, uint256 timestamp);

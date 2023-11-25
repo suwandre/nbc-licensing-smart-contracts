@@ -20,32 +20,32 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     //                           CONSTANTS
     // =============================================================
     // bit masks and positions for {IApplication - ApplicationData - firstPackedData} fields.
-    uint256 private constant SUBMISSION_DATE_BITMASK = (1 << 40) - 1;
-    uint256 private constant APPROVAL_DATE_BITMASK = ((1 << 40) - 1) << 40;
-    uint256 private constant EXPIRATION_DATE_BITMASK = ((1 << 40) - 1) << 80;
-    uint256 private constant LICENSE_FEE_BITMASK = ((1 << 136) - 1) << 120;
-    uint256 private constant SUBMISSION_DATE_BITPOS = 0;
-    uint256 private constant APPROVAL_DATE_BITPOS = 40;
-    uint256 private constant EXPIRATION_DATE_BITPOS = 80;
-    uint256 private constant LICENSE_FEE_BITPOS = 120;
+    uint256 internal constant SUBMISSION_DATE_BITMASK = (1 << 40) - 1;
+    uint256 internal constant APPROVAL_DATE_BITMASK = ((1 << 40) - 1) << 40;
+    uint256 internal constant EXPIRATION_DATE_BITMASK = ((1 << 40) - 1) << 80;
+    uint256 internal constant LICENSE_FEE_BITMASK = ((1 << 136) - 1) << 120;
+    uint256 internal constant SUBMISSION_DATE_BITPOS = 0;
+    uint256 internal constant APPROVAL_DATE_BITPOS = 40;
+    uint256 internal constant EXPIRATION_DATE_BITPOS = 80;
+    uint256 internal constant LICENSE_FEE_BITPOS = 120;
 
     // bit masks and positions for {IApplication - ApplicationData - secondPackedData} fields.
-    uint256 private constant REPORTING_FREQUENCY_BITMASK = (1 << 32) - 1;
-    uint256 private constant REPORTING_GRACE_PERIOD_BITMASK = ((1 << 32) - 1) << 32;
-    uint256 private constant ROYALTY_GRACE_PERIOD_BITMASK = ((1 << 32) - 1) << 64;
-    uint256 private constant UNTIMELY_REPORTS_BITMASK = ((1 << 8) - 1) << 96;
-    uint256 private constant UNTIMELY_ROYALTY_PAYMENTS_BITMASK = ((1 << 8) - 1) << 104;
-    uint256 private constant EXTRA_DATA_BITMASK = ((1 << 144) - 1) << 112;
-    uint256 private constant REPORTING_FREQUENCY_BITPOS = 0;
-    uint256 private constant REPORTING_GRACE_PERIOD_BITPOS = 32;
-    uint256 private constant ROYALTY_GRACE_PERIOD_BITPOS = 64;
-    uint256 private constant UNTIMELY_REPORTS_BITPOS = 96;
-    uint256 private constant UNTIMELY_ROYALTY_PAYMENTS_BITPOS = 104;
-    uint256 private constant EXTRA_DATA_BITPOS = 112;
+    uint256 internal constant REPORTING_FREQUENCY_BITMASK = (1 << 32) - 1;
+    uint256 internal constant REPORTING_GRACE_PERIOD_BITMASK = ((1 << 32) - 1) << 32;
+    uint256 internal constant ROYALTY_GRACE_PERIOD_BITMASK = ((1 << 32) - 1) << 64;
+    uint256 internal constant UNTIMELY_REPORTS_BITMASK = ((1 << 8) - 1) << 96;
+    uint256 internal constant UNTIMELY_ROYALTY_PAYMENTS_BITMASK = ((1 << 8) - 1) << 104;
+    uint256 internal constant EXTRA_DATA_BITMASK = ((1 << 144) - 1) << 112;
+    uint256 internal constant REPORTING_FREQUENCY_BITPOS = 0;
+    uint256 internal constant REPORTING_GRACE_PERIOD_BITPOS = 32;
+    uint256 internal constant ROYALTY_GRACE_PERIOD_BITPOS = 64;
+    uint256 internal constant UNTIMELY_REPORTS_BITPOS = 96;
+    uint256 internal constant UNTIMELY_ROYALTY_PAYMENTS_BITPOS = 104;
+    uint256 internal constant EXTRA_DATA_BITPOS = 112;
 
 
     // a mapping from a licensee's address to an application hash to the license agreement instance.
-    mapping (address => mapping (bytes32 => LicenseAgreement)) internal _licenseAgreement;
+    mapping(address => mapping(bytes32 => LicenseAgreement)) internal _licenseAgreement;
 
     // checks whether the caller is an owner or owns the specified license, else reverts.
     modifier onlyOwnerOrLicenseOwner(address licensee, bytes32 applicationHash) {
@@ -67,8 +67,17 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
 
     // a modifier to check whether a license is usable.
     // here, we assume that a usable license means it's already approved. thus, this modifier is primarily only used to revert if the license is already usable.
-    modifier unapprovedLicense(address licensee, bytes32 applicationHash) {
+    modifier onlyUnusableLicense(address licensee, bytes32 applicationHash) {
         _checkLicenseUsable(licensee, applicationHash);
+        _;
+    }
+
+    // a odifier to check whether a license is usable.
+    // unlike {onlyUnusableLicense}, this modifier is used to revert if the license is not usable; thus the opposite.
+    modifier onlyUsableLicense(address licensee, bytes32 applicationHash) {
+        if (!isLicenseUsable(licensee, applicationHash)) {
+            revert LicenseNotUsable(licensee, applicationHash);
+        }
         _;
     }
 
@@ -88,7 +97,7 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         onlyOwner
         applicationExists(licensee, applicationHash)
         hasPaidFee(licensee, applicationHash)
-        unapprovedLicense(licensee, applicationHash)
+        onlyUnusableLicense(licensee, applicationHash)
     {
         // get the license agreement.
         LicenseAgreement storage licenseAgreement = _licenseAgreement[licensee][applicationHash];
@@ -424,6 +433,22 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     }
 
     /**
+     * @dev (For licensors) Increments the {untimelyReports} field within {LicenseAgreement.data.secondPackedData} by 1.
+     */
+    function incrementUntimelyReports(address licensee, bytes32 applicationHash)
+        public
+        virtual
+        override
+        onlyOwner
+        applicationExists(licensee, applicationHash)
+    {
+        LicenseAgreement storage licenseAgreement = _licenseAgreement[licensee][applicationHash];
+
+        // increment the untimely reports by 1.
+        licenseAgreement.data.secondPackedData = (licenseAgreement.data.secondPackedData & ~UNTIMELY_REPORTS_BITMASK) | ((licenseAgreement.data.secondPackedData >> UNTIMELY_REPORTS_BITPOS) + 1) << UNTIMELY_REPORTS_BITPOS;
+    }
+
+    /**
      * @dev Gets the amount of untimely royalty payments for a license application.
      */
     function getUntimelyRoyaltyPayments(address licensee, bytes32 applicationHash) 
@@ -436,6 +461,22 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         returns (uint256)
     {
         return (_licenseAgreement[licensee][applicationHash].data.secondPackedData >> UNTIMELY_ROYALTY_PAYMENTS_BITPOS) & UNTIMELY_ROYALTY_PAYMENTS_BITMASK;
+    }
+    
+    /**
+     * @dev (For licensors) Increments the {untimelyRoyaltyPayments} field within {LicenseAgreement.data.secondPackedData} by 1.
+     */
+    function incrementUntimelyRoyaltyPayments(address licensee, bytes32 applicationHash)
+        public
+        virtual
+        override
+        onlyOwner
+        applicationExists(licensee, applicationHash)
+    {
+        LicenseAgreement storage licenseAgreement = _licenseAgreement[licensee][applicationHash];
+
+        // increment the untimely royalty payments by 1.
+        licenseAgreement.data.secondPackedData = (licenseAgreement.data.secondPackedData & ~UNTIMELY_ROYALTY_PAYMENTS_BITMASK) | ((licenseAgreement.data.secondPackedData >> UNTIMELY_ROYALTY_PAYMENTS_BITPOS) + 1) << UNTIMELY_ROYALTY_PAYMENTS_BITPOS;
     }
 
     /**
@@ -470,7 +511,7 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
             revert InvalidExtraDataLength(extraData);
         }
 
-        licenseAgreement.data.secondPackedData = (licenseAgreement.data.secondPackedData & ~EXTRA_DATA_BITMASK) | (extraData << EXTRA_DATA_BITPOS);
+        licenseAgreement.data.secondPackedData |= extraData << EXTRA_DATA_BITPOS;
     }
 
     /**
@@ -505,6 +546,9 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
 
     /**
      * @dev Checks whether the license is usable via {LicenseAgreement.usable}.
+     * Usability here is accountable for licenses being usable and approved. 
+     * If {usable} is true, then the license is approved and usable.
+     * If {usable} is false, then the license can be temporarily "unapproved" and rendered unusable.
      */
     function isLicenseUsable(address licensee, bytes32 applicationHash) 
         public 
