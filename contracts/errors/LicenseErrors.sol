@@ -118,5 +118,10 @@ interface IApplicationErrors {
     /**
      * @dev Throws when caller is neither one of the owners nor a licensee that owns the specified license application.
      */
-    error NotOwnerOrOwnedLicensee(address caller, bytes32 applicationHash);
+    error NotOwnerOrLicenseOwner(address caller, bytes32 applicationHash);
+
+    /**
+     * @dev Throws when trying to approve an application when {LicenseAgreement.usable} is already true.
+     */
+    error LicenseAlreadyUsable(address licnsee, bytes32 applicationHash);
 }
