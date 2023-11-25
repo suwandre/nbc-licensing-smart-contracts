@@ -130,3 +130,48 @@ interface IApplicationErrors {
      */
     error InvalidExtraDataLength(uint256 extraData);
 }
+
+/**
+ * @dev All errors related to the {Royalty} contract.
+ */
+interface IRoyaltyErrors {
+    /**
+     * @dev Throws when the royalty for a specific report has already been paid.
+     */
+    error RoyaltyAlreadyPaid(address licensee, bytes32 applicationHash, uint256 reportIndex);
+
+    /**
+     * @dev Throws when the licensee pays a different amount than the amount due.
+     */
+    error RoyaltyAmountMismatch(address licensee, bytes32 applicationHash, uint256 reportIndex, uint256 royaltyDue, uint256 royaltyToPay);
+
+    /**
+     * @dev Throws when the licensee tries to pay royalty for a report that hasn't been approved yet.
+     */
+    error ReportNotYetApproved(address licensee, bytes32 applicationHash, uint256 reportIndex);
+
+    /**
+     * @dev Throws when trying to change a report when the report has already been approved.
+     */
+    error ReportAlreadyApproved(address licensee, bytes32 applicationHash, uint256 reportIndex);
+
+    /**
+     * @dev Throws when a licensee tries to report a new revenue report when not yet allowed.
+     */
+    error NewReportNotYetAllowed(address licensee, bytes32 applicationHash);
+
+    /**
+     * @dev Throws when a licensor wants to add an untimely report count when the report is not yet due.
+     */
+    error UntimelyReportNotRequired(address licensee, bytes32 applicationHash, uint256 reportIndex);
+
+    /**
+     * @dev Throws when trying to increase the untimely royalty payment count when the royalty is not yet due.
+     */
+    error RoyaltyPaymentNotYetNeeded(address licensee, bytes32 applicationHash, uint256 reportIndex);
+
+    /**
+     * @dev Throws when a licensor wants to add an untimely royalty payment count when the royalty is not yet due (or not yet added)
+     */
+    error RoyaltyNoDeadline(address licensee, bytes32 applicationHash, uint256 reportIndex);
+}
