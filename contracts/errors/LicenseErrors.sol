@@ -123,5 +123,10 @@ interface IApplicationErrors {
     /**
      * @dev Throws when trying to approve an application when {LicenseAgreement.usable} is already true.
      */
-    error LicenseAlreadyUsable(address licnsee, bytes32 applicationHash);
+    error LicenseAlreadyUsable(address licensee, bytes32 applicationHash);
+
+    /**
+     * @dev Throws when trying to set an extra data value that's too large.
+     */
+    error InvalidExtraDataLength(uint256 extraData);
 }

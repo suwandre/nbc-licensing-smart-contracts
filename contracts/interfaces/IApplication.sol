@@ -85,6 +85,7 @@ interface IApplication {
     function getUntimelyReports(address licensee, bytes32 applicationHash) external view returns (uint256);
     function getUntimelyRoyaltyPayments(address licensee, bytes32 applicationHash) external view returns (uint256);
     function getExtraData(address licensee, bytes32 applicationHash) external view returns (uint256);
+    function setExtraData(address licensee, bytes32 applicationHash, uint256 extraData) external;
     function getLicenseId(address licensee, bytes32 applicationHash) external view returns (uint256);
     function getSignature(address licensee, bytes32 applicationHash) external view returns (bytes memory);
     function isLicenseUsable(address licensee, bytes32 applicationHash) external view returns (bool);

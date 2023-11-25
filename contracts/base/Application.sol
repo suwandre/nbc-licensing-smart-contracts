@@ -454,6 +454,26 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     }
 
     /**
+     * @dev (For licensors) Sets the extra data for a license application.
+     */
+    function setExtraData(address licensee, bytes32 applicationHash, uint256 extraData)
+        public
+        virtual
+        override
+        onlyOwner
+        applicationExists(licensee, applicationHash)
+    {
+        LicenseAgreement storage licenseAgreement = _licenseAgreement[licensee][applicationHash];
+
+        // ensure that the extra data is not greater than 2^144 - 1.
+        if (extraData > ((1 << 144) - 1)) {
+            revert InvalidExtraDataLength(extraData);
+        }
+
+        licenseAgreement.data.secondPackedData = (licenseAgreement.data.secondPackedData & ~EXTRA_DATA_BITMASK) | (extraData << EXTRA_DATA_BITPOS);
+    }
+
+    /**
      * @dev Gets the license ID for a license application.
      */
     function getLicenseId(address licensee, bytes32 applicationHash) 
