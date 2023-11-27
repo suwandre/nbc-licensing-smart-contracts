@@ -39,6 +39,8 @@ interface IRoyalty {
     event UntimelyReport(address indexed licensee, bytes32 indexed licenseHash, uint256 reportIndex, uint256 timestamp);
     event UntimelyRoyaltyPayment(address indexed licensee, bytes32 indexed licenseHash, uint256 reportIndex, uint256 timestamp);
 
+    function getReceiver() external view returns (address);
+    function setReceiver(address receiver) external;
     function submitReport(address licensee, bytes32 applicationHash, string calldata url) external;
     function getReport(address licensee, bytes32 applicationHash, uint256 reportIndex) external view returns (Report memory);
     function getReportSubmissionTimestamp(address licensee, bytes32 applicationHash, uint256 reportIndex) external view returns (uint256);

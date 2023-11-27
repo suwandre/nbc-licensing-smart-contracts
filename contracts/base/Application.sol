@@ -8,13 +8,13 @@ import "../base/Licensee.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 /**
- * @dev License application registry and maangement.
+ * @dev License application registry and management.
  */
 abstract contract Application is IApplication, IApplicationErrors, Permit, Licensee {
     // the current application's id.
     // will always increment upwards and will never reset back in case an application is removed.
     // this should be set to 1 in the constructor.
-    uint256 private _currentApplicationIndex;
+    uint256 internal _currentApplicationIndex;
 
     // =============================================================
     //                           CONSTANTS
@@ -72,7 +72,7 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         _;
     }
 
-    // a odifier to check whether a license is usable.
+    // a modifier to check whether a license is usable.
     // unlike {onlyUnusableLicense}, this modifier is used to revert if the license is not usable; thus the opposite.
     modifier onlyUsableLicense(address licensee, bytes32 applicationHash) {
         if (!isLicenseUsable(licensee, applicationHash)) {
@@ -93,7 +93,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function approveApplication(address licensee, bytes32 applicationHash) 
         public 
         virtual
-        override
         onlyOwner
         applicationExists(licensee, applicationHash)
         hasPaidFee(licensee, applicationHash)
@@ -117,7 +116,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function addModifications(address licensee, bytes32 applicationHash, bytes calldata modifications)
         public 
         virtual
-        override
         onlyOwner
         applicationExists(licensee, applicationHash)
     {
@@ -136,7 +134,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function updateReportingFrequency(address licensee, bytes32 applicationHash, uint256 newFrequency)
         public
         virtual
-        override
         onlyOwner
         applicationExists(licensee, applicationHash)
     {
@@ -153,7 +150,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function updateReportingGracePeriod(address licensee, bytes32 applicationHash, uint256 newPeriod)
         public
         virtual
-        override
         onlyOwner
         applicationExists(licensee, applicationHash)
     {
@@ -170,7 +166,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function updateRoyaltyGracePeriod(address licensee, bytes32 applicationHash, uint256 newPeriod)
         public
         virtual
-        override
         onlyOwner
         applicationExists(licensee, applicationHash)
     {
@@ -190,7 +185,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function updateLicenseUsable(address licensee, bytes32 applicationHash)
         public
         virtual
-        override
         onlyOwner
         applicationExists(licensee, applicationHash)
     {
@@ -225,7 +219,7 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         bytes calldata signature,
         bytes calldata modifications,
         string calldata hashSalt
-    ) public virtual override onlyLicensee {
+    ) public virtual onlyLicensee {
         // get the license fee
         uint256 licenseFee = (firstPackedData >> LICENSE_FEE_BITPOS) & LICENSE_FEE_BITMASK;
 
@@ -286,7 +280,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function removeApplication(address licensee, bytes32 applicationHash, string calldata reason) 
         public 
         virtual 
-        override 
         onlyOwnerOrLicenseOwner(licensee, applicationHash)
         applicationExists(licensee, applicationHash)
     {
@@ -303,7 +296,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function getLicenseAgreement(address licensee, bytes32 applicationHash) 
         public 
         virtual
-        override
         onlyOwnerOrLicenseOwner(licensee, applicationHash)
         applicationExists(licensee, applicationHash)
         view 
@@ -318,7 +310,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function getSubmissionDate(address licensee, bytes32 applicationHash) 
         public 
         virtual
-        override
         onlyOwnerOrLicenseOwner(licensee, applicationHash)
         applicationExists(licensee, applicationHash)
         view
@@ -333,7 +324,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function getApprovalDate(address licensee, bytes32 applicationHash) 
         public 
         virtual
-        override
         onlyOwnerOrLicenseOwner(licensee, applicationHash)
         applicationExists(licensee, applicationHash)
         view
@@ -348,7 +338,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function getExpirationDate(address licensee, bytes32 applicationHash) 
         public 
         virtual
-        override
         onlyOwnerOrLicenseOwner(licensee, applicationHash)
         applicationExists(licensee, applicationHash)
         view
@@ -363,7 +352,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function getLicenseFee(address licensee, bytes32 applicationHash) 
         public 
         virtual
-        override
         onlyOwnerOrLicenseOwner(licensee, applicationHash)
         applicationExists(licensee, applicationHash)
         view
@@ -378,7 +366,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function getReportingFrequency(address licensee, bytes32 applicationHash) 
         public 
         virtual
-        override
         onlyOwnerOrLicenseOwner(licensee, applicationHash)
         applicationExists(licensee, applicationHash)
         view
@@ -393,7 +380,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function getReportingGracePeriod(address licensee, bytes32 applicationHash) 
         public 
         virtual
-        override
         onlyOwnerOrLicenseOwner(licensee, applicationHash)
         applicationExists(licensee, applicationHash)
         view
@@ -408,7 +394,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function getRoyaltyGracePeriod(address licensee, bytes32 applicationHash) 
         public 
         virtual
-        override
         onlyOwnerOrLicenseOwner(licensee, applicationHash)
         applicationExists(licensee, applicationHash)
         view
@@ -423,7 +408,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function getUntimelyReports(address licensee, bytes32 applicationHash) 
         public 
         virtual
-        override
         onlyOwnerOrLicenseOwner(licensee, applicationHash)
         applicationExists(licensee, applicationHash)
         view
@@ -438,7 +422,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function incrementUntimelyReports(address licensee, bytes32 applicationHash)
         public
         virtual
-        override
         onlyOwner
         applicationExists(licensee, applicationHash)
     {
@@ -454,7 +437,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function getUntimelyRoyaltyPayments(address licensee, bytes32 applicationHash) 
         public 
         virtual
-        override
         onlyOwnerOrLicenseOwner(licensee, applicationHash)
         applicationExists(licensee, applicationHash)
         view
@@ -469,7 +451,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function incrementUntimelyRoyaltyPayments(address licensee, bytes32 applicationHash)
         public
         virtual
-        override
         onlyOwner
         applicationExists(licensee, applicationHash)
     {
@@ -485,7 +466,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function getExtraData(address licensee, bytes32 applicationHash) 
         public 
         virtual
-        override
         onlyOwnerOrLicenseOwner(licensee, applicationHash)
         applicationExists(licensee, applicationHash)
         view
@@ -500,7 +480,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function setExtraData(address licensee, bytes32 applicationHash, uint256 extraData)
         public
         virtual
-        override
         onlyOwner
         applicationExists(licensee, applicationHash)
     {
@@ -520,7 +499,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function getLicenseId(address licensee, bytes32 applicationHash) 
         public 
         virtual
-        override
         onlyOwnerOrLicenseOwner(licensee, applicationHash)
         applicationExists(licensee, applicationHash)
         view
@@ -535,7 +513,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function getSignature(address licensee, bytes32 applicationHash) 
         public 
         virtual
-        override
         onlyOwnerOrLicenseOwner(licensee, applicationHash)
         applicationExists(licensee, applicationHash)
         view
@@ -553,7 +530,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function isLicenseUsable(address licensee, bytes32 applicationHash) 
         public 
         virtual
-        override
         onlyOwnerOrLicenseOwner(licensee, applicationHash)
         applicationExists(licensee, applicationHash)
         view
@@ -568,7 +544,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function isFeePaid(address licensee, bytes32 applicationHash) 
         public 
         virtual
-        override
         onlyOwnerOrLicenseOwner(licensee, applicationHash)
         applicationExists(licensee, applicationHash)
         view
@@ -583,7 +558,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function getModifications(address licensee, bytes32 applicationHash) 
         public 
         virtual
-        override
         onlyOwnerOrLicenseOwner(licensee, applicationHash)
         view
         returns (bytes memory)

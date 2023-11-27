@@ -141,6 +141,16 @@ interface IApplicationErrors {
  */
 interface IRoyaltyErrors {
     /**
+     * @dev Throws when trying to set the receiver address to an invalid address (e.g. `address(0)`).
+     */
+    error InvalidReceiverAddress(address receiver);
+
+    /**
+     * @dev Throws when trying to set the receiver address to the same address as the current receiver address.
+     */
+    error SameReceiverAddress();
+
+    /**
      * @dev Throws when the royalty for a specific report has already been paid.
      */
     error RoyaltyAlreadyPaid(address licensee, bytes32 applicationHash, uint256 reportIndex);

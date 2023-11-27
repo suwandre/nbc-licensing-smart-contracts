@@ -10,7 +10,7 @@ import "./Application.sol";
  */
 abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
     // the address that receives royalty from the licensee.
-    address private _receiver;
+    address internal _receiver;
 
     // a mapping from a licensee's address to the application hash to a {LicenseRecord} instance.
     mapping(address => mapping(bytes32 => LicenseRecord)) private _licenseRecord;
@@ -46,12 +46,33 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
     }
 
     /**
+     * @dev Gets the {_reciever} address.
+     */
+    function getReceiver() public view virtual returns (address) {
+        return _receiver;
+    }
+
+    /**
+     * @dev Sets (or changes) the {_receiver} address to {newReceiver}.
+     */
+    function setReceiver(address receiver) public virtual onlyOwner {
+        if (receiver == address(0)) {
+            revert InvalidReceiverAddress(receiver);
+        }
+
+        if (_receiver == receiver) {
+            revert SameReceiverAddress();
+        }
+
+        _receiver = receiver;
+    }
+
+    /**
      * @dev (For licensors and license owners) Submits a revenue report for {licensee} for a specific license with the given {applicationHash}.
      */
     function submitReport(address licensee, bytes32 applicationHash, string calldata url)
         public
         virtual
-        override
         onlyOwnerOrLicenseOwner(licensee, applicationHash)
         applicationExists(licensee, applicationHash)
         onlyUsableLicense(licensee, applicationHash)
@@ -117,7 +138,6 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
     function changeReport(address licensee, bytes32 applicationHash, uint256 reportIndex, string calldata newUrl)
         public
         virtual
-        override
         onlyOwnerOrLicenseOwner(licensee, applicationHash)
         applicationExists(licensee, applicationHash)
         onlyUsableLicense(licensee, applicationHash)
@@ -150,7 +170,6 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
     )
         public
         virtual
-        override
         onlyOwner
         applicationExists(licensee, applicationHash)
         onlyUsableLicense(licensee, applicationHash)
@@ -178,7 +197,6 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
     function payRoyalty(bytes32 applicationHash, uint256 reportIndex, uint256 amount)
         public
         virtual
-        override
         onlyOwnerOrLicenseOwner(_msgSender(), applicationHash)
         applicationExists(_msgSender(), applicationHash)
         onlyUsableLicense(_msgSender(), applicationHash)
