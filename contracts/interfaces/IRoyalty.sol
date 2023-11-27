@@ -32,12 +32,13 @@ interface IRoyalty {
         uint256 packedData;
     }
 
-    event ReportSubmitted(address indexed licensee, bytes32 indexed licenseHash, uint256 reportIndex, uint256 timestamp);
-    event RoyaltyPaid(address indexed licensee, bytes32 indexed licenseHash, uint256 reportIndex, uint256 timestamp);
-    event ReportApproved(address indexed licensee, bytes32 indexed licenseHash, uint256 reportIndex, uint256 timestamp);
-    event ReportChanged(address indexed licensee, bytes32 indexed licenseHash, uint256 reportIndex, uint256 timestamp);
-    event UntimelyReport(address indexed licensee, bytes32 indexed licenseHash, uint256 reportIndex, uint256 timestamp);
-    event UntimelyRoyaltyPayment(address indexed licensee, bytes32 indexed licenseHash, uint256 reportIndex, uint256 timestamp);
+    event ReportSubmitted(address indexed licensee, bytes32 indexed applicationHash, uint256 reportIndex, uint256 timestamp);
+    event RoyaltyPaid(address indexed licensee, bytes32 indexed applicationHash, uint256 reportIndex, uint256 timestamp);
+    event ReportApproved(address indexed licensee, bytes32 indexed applicationHash, uint256 reportIndex, uint256 timestamp);
+    event ReportChanged(address indexed licensee, bytes32 indexed applicationHash, uint256 reportIndex, uint256 timestamp);
+    event UntimelyReport(address indexed licensee, bytes32 indexed applicationHash, uint256 reportIndex, uint256 timestamp);
+    event UntimelyRoyaltyPayment(address indexed licensee, bytes32 indexed applicationHash, uint256 reportIndex, uint256 timestamp);
+    event ReportExtraDataChanged(address indexed licensee, bytes32 indexed applicationHash, uint256 reportIndex, uint256 extraData, uint256 timestamp);
 
     function getReceiver() external view returns (address);
     function setReceiver(address receiver) external;
@@ -51,13 +52,12 @@ interface IRoyalty {
     function getReportExtraData(address licensee, bytes32 applicationHash, uint256 reportIndex) external view returns (uint256);
     function setReportExtraData(address licensee, bytes32 applicationHash, uint256 reportIndex, uint256 extraData) external;
     function changeReport(address licensee, bytes32 applicationHash, uint256 reportIndex, string calldata newUrl) external;
-    function approveReport(address licensee,
+    function approveReport(
+        address licensee,
         bytes32 applicationHash,
         uint256 reportIndex,
         uint256 paymentDeadline,
         uint256 amountDue
     ) external;
     function payRoyalty(bytes32 applicationHash, uint256 reportIndex, uint256 amount) external;
-    function untimelyReport(address licensee, bytes32 applicationHash, uint256 reportIndex) external;
-    function untimelyRoyaltyPayment(address licensee, bytes32 applicationHash, uint256 reportIndex) external;
 }

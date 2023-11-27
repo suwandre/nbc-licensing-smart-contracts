@@ -73,34 +73,6 @@ abstract contract Licensee is MultiOwnable, ILicensee, ILicenseeErrors {
     }
 
     /**
-     * @dev Similar to the other {registerAccount}, but allows an owner to manually register {user}'s licensee account.
-     * Since this account will be directly added by an owner, this function assumes legitimacy checks beforehand are complete and sets {usable} directly to true.
-     *
-     * Requirements:
-     * - The caller must be an owner.
-     * - The given {user} must not have a licensee account registered within {_licenseeAccount}.
-     * - The given {data} must not be empty.
-     */
-    function registerAccount(address user, bytes calldata data) external virtual onlyOwner {
-        if (_licenseeAccount[user].data.length != 0) {
-            revert LicenseeAlreadyExists(user);
-        }
-
-        if (data.length == 0) {
-            revert EmptyLicenseeData();
-        }
-
-        LicenseeAccount memory licenseeAccount = LicenseeAccount({
-            data: data,
-            usable: true
-        });
-
-        _licenseeAccount[user] = licenseeAccount;
-
-        emit LicenseeRegistered(user, block.timestamp);
-    }
-
-    /**
      * @dev Batch approves a list of registered accounts.
      *
      * Requirements:

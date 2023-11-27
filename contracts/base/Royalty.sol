@@ -132,6 +132,129 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
     }
 
     /**
+     * @dev (For licensors and license owners) Gets a report of index {reportIndex} for a specific license.
+     */
+    function getReport(address licensee, bytes32 applicationHash, uint256 reportIndex)
+        public
+        virtual
+        onlyOwnerOrLicenseOwner(licensee, applicationHash)
+        applicationExists(licensee, applicationHash)
+        view
+        returns (Report memory)
+    {
+        return _licenseRecord[licensee][applicationHash].reports[reportIndex];
+    }
+
+    /**
+     * @dev (For licensors and license owners) Gets the submission timestamp of a report of index {reportIndex} for a specific license.
+     */
+    function getReportSubmissionTimestamp(address licensee, bytes32 applicationHash, uint256 reportIndex)
+        public
+        virtual
+        onlyOwnerOrLicenseOwner(licensee, applicationHash)
+        applicationExists(licensee, applicationHash)
+        view
+        returns (uint256)
+    {
+        Report memory report = _licenseRecord[licensee][applicationHash].reports[reportIndex];
+        return (report.packedData >> SUBMISSION_TIMESTAMP_BITPOS) & SUBMISSION_TIMESTAMP_BITMASK;
+    }
+
+    /**
+     * @dev (For licensors and license owners) Gets the approval timestamp of a report of index {reportIndex} for a specific license.
+     */
+    function getReportApprovalTimestamp(address licensee, bytes32 applicationHash, uint256 reportIndex)
+        public
+        virtual
+        onlyOwnerOrLicenseOwner(licensee, applicationHash)
+        applicationExists(licensee, applicationHash)
+        view
+        returns (uint256)
+    {
+        Report memory report = _licenseRecord[licensee][applicationHash].reports[reportIndex];
+        return (report.packedData >> APPROVAL_TIMESTAMP_BITPOS) & APPROVAL_TIMESTAMP_BITMASK;
+    }
+
+    /**
+     * @dev (For licensors and license owners) Gets the royalty payment deadline of a report of index {reportIndex} for a specific license.
+     */
+    function getRoyaltyPaymentDeadline(address licensee, bytes32 applicationHash, uint256 reportIndex)
+        public
+        virtual
+        onlyOwnerOrLicenseOwner(licensee, applicationHash)
+        applicationExists(licensee, applicationHash)
+        view
+        returns (uint256)
+    {
+        Report memory report = _licenseRecord[licensee][applicationHash].reports[reportIndex];
+        return (report.packedData >> ROYALTY_PAYMENT_DEADLINE_BITPOS) & ROYALTY_PAYMENT_DEADLINE_BITMASK;
+    }
+
+    /**
+     * @dev (For licensors and license owners) Gets the royalty payment timestamp of a report of index {reportIndex} for a specific license.
+     */
+    function getRoyaltyPaymentTimestamp(address licensee, bytes32 applicationHash, uint256 reportIndex)
+        public
+        virtual
+        onlyOwnerOrLicenseOwner(licensee, applicationHash)
+        applicationExists(licensee, applicationHash)
+        view
+        returns (uint256)
+    {
+        Report memory report = _licenseRecord[licensee][applicationHash].reports[reportIndex];
+        return (report.packedData >> ROYALTY_PAYMENT_TIMESTAMP_BITPOS) & ROYALTY_PAYMENT_TIMESTAMP_BITMASK;
+    }
+
+    /**
+     * @dev (For licensors and license owners) Gets the report change timestamp of a report of index {reportIndex} for a specific license.
+     */
+    function getReportChangeTimestamp(address licensee, bytes32 applicationHash, uint256 reportIndex)
+        public
+        virtual
+        onlyOwnerOrLicenseOwner(licensee, applicationHash)
+        applicationExists(licensee, applicationHash)
+        view
+        returns (uint256)
+    {
+        Report memory report = _licenseRecord[licensee][applicationHash].reports[reportIndex];
+        return (report.packedData >> REPORT_CHANGE_TIMESTAMP_BITPOS) & REPORT_CHANGE_TIMESTAMP_BITMASK;
+    }
+
+    /**
+     * @dev (For licensors and license owners) Gets the extra data of a report of index {reportIndex} for a specific license.
+     */
+    function getReportExtraData(address licensee, bytes32 applicationHash, uint256 reportIndex)
+        public
+        virtual
+        onlyOwnerOrLicenseOwner(licensee, applicationHash)
+        applicationExists(licensee, applicationHash)
+        view
+        returns (uint256)
+    {
+        Report memory report = _licenseRecord[licensee][applicationHash].reports[reportIndex];
+        return (report.packedData >> EXTRA_DATA_BITPOS) & EXTRA_DATA_BITMASK;
+    }
+
+    /**
+     * @dev (For licensors) Sets the extra data of a report of index {reportIndex} for a specific license to {extraData}.
+     */
+    function setReportExtraData(address licensee, bytes32 applicationHash, uint256 reportIndex, uint256 extraData)
+        public
+        virtual
+        onlyOwnerOrLicenseOwner(licensee, applicationHash)
+        applicationExists(licensee, applicationHash)
+    {
+        LicenseRecord storage licenseRecord = _licenseRecord[licensee][applicationHash];
+        Report storage report = licenseRecord.reports[reportIndex];
+
+        // update the report's extra data
+        report.packedData |= extraData << EXTRA_DATA_BITPOS;
+
+        emit ReportExtraDataChanged(licensee, applicationHash, reportIndex, extraData, block.timestamp);
+    }
+    
+
+    /**
      * @dev (For licensors and license owners) Changes the report URL for a specific report of index {reportIndex} for a specific license.
      * NOTE: Can only be done if the current report has not been approved yet.
      */
