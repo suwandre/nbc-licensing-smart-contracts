@@ -59,10 +59,24 @@ abstract contract MultiOwnable is Context {
     }
 
     /**
+     * @dev Fetches {_mainOwner} and checks whether {toCheck} is the main owner.
+     */
+    function isMainOwner(address toCheck) public view virtual returns (bool) {
+        return _mainOwner == toCheck;
+    }
+
+    /**
      * @dev Fetches the {_isOwner} mapping and checks whether the caller is an owner.
      */
     function isOwner() internal view virtual returns (bool) {
         return _isOwner[_msgSender()];
+    }
+
+    /**
+     * @dev Fetches the {_isOwner} mapping and checks whether {toCheck} is an owner.
+     */
+    function isOwner(address toCheck) public view virtual returns (bool) {
+        return _isOwner[toCheck];
     }
 
     /**
