@@ -104,23 +104,19 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
 
                 emit UntimelyReport(licensee, applicationHash, licenseRecord.reports.length - 1, block.timestamp);
             }
+        } else {
+            // if no report is found, we throw.
+            revert ReportDoesntExist(licensee, applicationHash);
         }
-
-        uint256 submissionTimestamp = block.timestamp;
-        uint256 approvalTimestamp = 0;
-        uint256 royaltyPaymentDeadline = 0;
-        uint256 royaltyPaymentTimestamp = 0;
-        uint256 reportChangeTimestamp = 0;
-        uint256 extraData = 0;
 
         // initialize packedData; store all the values above into packedData
         uint256 packedData = 0;
-        packedData |= submissionTimestamp;
-        packedData |= approvalTimestamp << APPROVAL_TIMESTAMP_BITPOS;
-        packedData |= royaltyPaymentDeadline << ROYALTY_PAYMENT_DEADLINE_BITPOS;
-        packedData |= royaltyPaymentTimestamp << ROYALTY_PAYMENT_TIMESTAMP_BITPOS;
-        packedData |= reportChangeTimestamp << REPORT_CHANGE_TIMESTAMP_BITPOS;
-        packedData |= extraData << REPORT_EXTRA_DATA_BITPOS;
+        packedData |= block.timestamp;
+        packedData |= 0 << APPROVAL_TIMESTAMP_BITPOS;
+        packedData |= 0 << ROYALTY_PAYMENT_DEADLINE_BITPOS;
+        packedData |= 0 << ROYALTY_PAYMENT_TIMESTAMP_BITPOS;
+        packedData |= 0 << REPORT_CHANGE_TIMESTAMP_BITPOS;
+        packedData |= 0 << REPORT_EXTRA_DATA_BITPOS;
 
         licenseRecord.reports.push(Report({
             amountDue: 0,
@@ -128,7 +124,7 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
             packedData: packedData
         }));
 
-        emit ReportSubmitted(licensee, applicationHash, licenseRecord.reports.length - 1, submissionTimestamp);
+        emit ReportSubmitted(licensee, applicationHash, licenseRecord.reports.length - 1, block.timestamp);
     }
 
     /**

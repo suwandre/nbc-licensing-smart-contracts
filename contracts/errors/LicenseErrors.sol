@@ -176,6 +176,11 @@ interface IRoyaltyErrors {
     error NewReportNotYetAllowed(address licensee, bytes32 applicationHash);
 
     /**
+     * @dev Throws when trying to access or do actions when a specific report to index doesn't exist.
+     */
+    error ReportDoesntExist(address licensee, bytes32 applicationHash);
+
+    /**
      * @dev Throws when a licensor wants to add an untimely report count when the report is not yet due.
      */
     error UntimelyReportNotRequired(address licensee, bytes32 applicationHash, uint256 reportIndex);

@@ -1,27 +1,23 @@
-import { formatEther, parseEther } from "viem";
+import { createWalletClient, custom, formatEther, http, parseEther } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 import hre from "hardhat";
+import { bscTestnet, mainnet } from "viem/chains";
 import "@nomicfoundation/hardhat-viem";
 
 async function main() {
-  const deploy = await hre.viem.deployContract("License", ["0x2c8bb107Ca119A4C39B8174AA5333F741fb57C15"]);
+  const deployerWallet = privateKeyToAccount(`0x${process.env.SECONDARY_DEPLOYER_WALLET_PVT_KEY}`);
 
-  console.log(
-    `License deployed to ${deploy.address} at timestamp ${deploy.read} and costs gas: ${deploy.estimateGas}`
-  );
-  // const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  // const unlockTime = BigInt(currentTimestampInSeconds + 60);
+  const walletClient = createWalletClient({
+    account: deployerWallet,
+    chain: bscTestnet,
+    transport: http("https://data-seed-prebsc-1-s1.binance.org:8545"),
+  })
 
-  // const lockedAmount = parseEther("0.001");
+  const deploy = await hre.viem.deployContract("License", ["0x2c8bb107Ca119A4C39B8174AA5333F741fb57C15"], {
+    walletClient
+  })
 
-  // const lock = await hre.viem.deployContract("Lock", [unlockTime], {
-  //   value: lockedAmount,
-  // });
-
-  // console.log(
-  //   `Lock with ${formatEther(
-  //     lockedAmount
-  //   )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`
-  // );
+  console.log(`Contract address: ${deploy.address}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
