@@ -3,20 +3,25 @@ import hre from "hardhat";
 import "@nomicfoundation/hardhat-viem";
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = BigInt(currentTimestampInSeconds + 60);
-
-  const lockedAmount = parseEther("0.001");
-
-  const lock = await hre.viem.deployContract("Lock", [unlockTime], {
-    value: lockedAmount,
-  });
+  const deploy = await hre.viem.deployContract("License", ["0x2c8bb107Ca119A4C39B8174AA5333F741fb57C15"]);
 
   console.log(
-    `Lock with ${formatEther(
-      lockedAmount
-    )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`
+    `License deployed to ${deploy.address} at timestamp ${deploy.read} and costs gas: ${deploy.estimateGas}`
   );
+  // const currentTimestampInSeconds = Math.round(Date.now() / 1000);
+  // const unlockTime = BigInt(currentTimestampInSeconds + 60);
+
+  // const lockedAmount = parseEther("0.001");
+
+  // const lock = await hre.viem.deployContract("Lock", [unlockTime], {
+  //   value: lockedAmount,
+  // });
+
+  // console.log(
+  //   `Lock with ${formatEther(
+  //     lockedAmount
+  //   )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`
+  // );
 }
 
 // We recommend this pattern to be able to use async/await everywhere

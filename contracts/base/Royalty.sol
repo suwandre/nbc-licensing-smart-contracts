@@ -24,14 +24,14 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
     uint256 internal constant ROYALTY_PAYMENT_DEADLINE_BITMASK = ((1 << 40) - 1) << 80;
     uint256 internal constant ROYALTY_PAYMENT_TIMESTAMP_BITMASK = ((1 << 40) - 1) << 120;
     uint256 internal constant REPORT_CHANGE_TIMESTAMP_BITMASK = ((1 << 40) - 1) << 160;
-    uint256 internal constant EXTRA_DATA_BITMASK = ((1 << 56) - 1) << 200;
+    uint256 internal constant REPORT_EXTRA_DATA_BITMASK = ((1 << 56) - 1) << 200;
 
     uint256 internal constant SUBMISSION_TIMESTAMP_BITPOS = 0;
     uint256 internal constant APPROVAL_TIMESTAMP_BITPOS = 40;
     uint256 internal constant ROYALTY_PAYMENT_DEADLINE_BITPOS = 80;
     uint256 internal constant ROYALTY_PAYMENT_TIMESTAMP_BITPOS = 120;
     uint256 internal constant REPORT_CHANGE_TIMESTAMP_BITPOS = 160;
-    uint256 internal constant EXTRA_DATA_BITPOS = 200;
+    uint256 internal constant REPORT_EXTRA_DATA_BITPOS = 200;
 
     // checks whether a licensee is allowed to submit a new report for a license, else reverts.
     modifier newReportAllowed(address licensee, bytes32 applicationHash) {
@@ -120,7 +120,7 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
         packedData |= royaltyPaymentDeadline << ROYALTY_PAYMENT_DEADLINE_BITPOS;
         packedData |= royaltyPaymentTimestamp << ROYALTY_PAYMENT_TIMESTAMP_BITPOS;
         packedData |= reportChangeTimestamp << REPORT_CHANGE_TIMESTAMP_BITPOS;
-        packedData |= extraData << EXTRA_DATA_BITPOS;
+        packedData |= extraData << REPORT_EXTRA_DATA_BITPOS;
 
         licenseRecord.reports.push(Report({
             amountDue: 0,
@@ -232,7 +232,7 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
         returns (uint256)
     {
         Report memory report = _licenseRecord[licensee][applicationHash].reports[reportIndex];
-        return (report.packedData >> EXTRA_DATA_BITPOS) & EXTRA_DATA_BITMASK;
+        return (report.packedData >> REPORT_EXTRA_DATA_BITPOS) & REPORT_EXTRA_DATA_BITMASK;
     }
 
     /**
@@ -248,7 +248,7 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
         Report storage report = licenseRecord.reports[reportIndex];
 
         // update the report's extra data
-        report.packedData |= extraData << EXTRA_DATA_BITPOS;
+        report.packedData |= extraData << REPORT_EXTRA_DATA_BITPOS;
 
         emit ReportExtraDataChanged(licensee, applicationHash, reportIndex, extraData, block.timestamp);
     }
