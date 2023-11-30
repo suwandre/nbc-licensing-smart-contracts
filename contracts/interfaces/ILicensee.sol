@@ -23,7 +23,6 @@ interface ILicensee {
         bool usable;
     }
 
-    function getAccount() external view returns (LicenseeAccount memory);
     function getAccount(address licensee) external view returns (LicenseeAccount memory);
     function registerAccount(bytes calldata data) external;
     function approveAccounts(address[] memory licensees) external;

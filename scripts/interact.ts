@@ -15,15 +15,19 @@ async function main() {
 
     const license = await hre.viem.getContractAt(
         "License",
-        "0xECa13Ca3b060a912B6891721f74C3F4B0C3979aA",
+        "0xA79c91afc157AadcDA1Cf513924EA652058418Aa",
         { walletClient }
     );
 
-    const getAccount = await license.read.getAccount(
-        ["0x2c8bb107Ca119A4C39B8174AA5333F741fb57C15"]
-    );
+    // const getAccount = await license.read.getAccount(
+    //     ["0x2c8bb107Ca119A4C39B8174AA5333F741fb57C15"]
+    // );
 
-    console.log(getAccount);
+    // console.log(getAccount);
+
+    // await license.write.approveAccounts([
+    //     ["0x2c8bb107Ca119A4C39B8174AA5333F741fb57C15"]
+    // ]).then((hash) => console.log(hash));
 
     // // test register licensee account
     // const data = toHex(

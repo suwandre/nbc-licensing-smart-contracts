@@ -11,6 +11,11 @@ interface ILicenseeErrors {
     error NotOwnerOrLicensee(address caller);
 
     /**
+     * @dev Throws if the caller is neither an owner nor the queried for licensee.
+     */
+    error NotOwnerOrOwnLicensee(address caller, address queriedLicensee);
+
+    /**
      * @dev Throws if an account with the given {licensee} address already exists within {Licensee - _licenseeAccount}.
      */
     error LicenseeAlreadyExists(address licensee);

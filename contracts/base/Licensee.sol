@@ -26,17 +26,19 @@ abstract contract Licensee is MultiOwnable, ILicensee, ILicenseeErrors {
         _;
     }
 
-    /**
-     * @dev Fetches the caller's {LicenseeAccount} instance.
-     */
-    function getAccount() external virtual view returns (LicenseeAccount memory) {
-        return _licenseeAccount[_msgSender()];
+    // a modifier that checks whether the caller is an owner or the queried for licensee.
+    modifier onlyOwnerOrOwnLicensee(address licensee) {
+        if (!isOwner() && _msgSender() != licensee) {
+            revert NotOwnerOrOwnLicensee(_msgSender(), licensee);
+        }
+        _;
     }
 
     /**
-     * @dev Fetches {licensee}'s {LicenseeAccount} instance. Can only be called by an owner.
+     * @dev Fetches {licensee}'s {LicenseeAccount} instance. Can only be called by an owner or self (for licensees).
+     * If the caller is neither an owner nor the queried for {licensee}, this function reverts.
      */
-    function getAccount(address licensee) external virtual onlyOwner view returns (LicenseeAccount memory) {
+    function getAccount(address licensee) external virtual onlyOwnerOrOwnLicensee(licensee) view returns (LicenseeAccount memory) {
         return _licenseeAccount[licensee];
     }
 
