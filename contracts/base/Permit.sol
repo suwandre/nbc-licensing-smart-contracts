@@ -107,7 +107,7 @@ abstract contract Permit is MultiOwnable, IPermit, IPermitErrors {
     /**
      * @dev Gets the keccak256 hash of {license}. This corresponds to the hash used for {Permit - license}.
      */
-    function _licenseHash(string memory license) internal pure returns (bytes32) {
+    function getLicenseHash(string calldata license) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(license));
     }
 

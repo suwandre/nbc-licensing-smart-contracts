@@ -14,7 +14,7 @@ interface IApplication {
      * NOTE: All dates and timestamps are in UNIX time; all durations and frequencies specified are in seconds.
      */
     struct ApplicationData {
-        // the license hash of the license type the licensee is applying for. see {Permit - _licenseHash}.
+        // the license hash of the license type the licensee is applying for. see {Permit - getLicenseHash}.
         bytes32 licenseHash;
         // the URL that leads to the finalized terms and conditions of the license.
         string appliedTerms;
@@ -92,4 +92,13 @@ interface IApplication {
     function isLicenseUsable(address licensee, bytes32 applicationHash) external view returns (bool);
     function isFeePaid(address licensee, bytes32 applicationHash) external view returns (bool);
     function getModifications(address licensee, bytes32 applicationHash) external view returns (bytes memory);
+    function getApplicationHash(
+        address licensee,
+        bytes32 licenseHash, 
+        string calldata appliedTerms,
+        uint256 firstPackedData, 
+        uint256 secondPackedData, 
+        bytes calldata modifications, 
+        string calldata hashSalt
+    ) external pure returns (bytes32);
 }

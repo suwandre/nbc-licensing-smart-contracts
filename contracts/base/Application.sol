@@ -230,7 +230,8 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         _submitApplicationCheck(licenseFee, expirationDate);
 
         // gets the hash of the application.
-        bytes32 applicationHash = _applicationHash(
+        bytes32 applicationHash = getApplicationHash(
+            _msgSender(),
             licenseHash,
             appliedTerms,
             firstPackedData,
@@ -635,16 +636,18 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     /**
      * @dev Generates a bytes32 hash for a license application given the specified parameters.
      */
-    function _applicationHash(
+    function getApplicationHash(
+        address licensee,
         bytes32 licenseHash, 
         string calldata appliedTerms,
         uint256 firstPackedData, 
         uint256 secondPackedData, 
         bytes calldata modifications, 
         string calldata hashSalt
-    ) private pure returns (bytes32) {
+    ) public pure returns (bytes32) {
         return keccak256(
             abi.encodePacked(
+                licensee,
                 licenseHash, 
                 appliedTerms, 
                 firstPackedData, 

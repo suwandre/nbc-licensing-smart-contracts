@@ -13,4 +13,5 @@ interface IPermit {
     function removeLicense(bytes32 licenseHash) external;
     function changeLicenseTerms(bytes32 licenseHash, string calldata newTerms) external;
     function getLicense(bytes32 licenseHash) external view returns (string memory);
+    function getLicenseHash(string calldata license) external pure returns (bytes32);
 }
