@@ -19,24 +19,24 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     // =============================================================
     //                           CONSTANTS
     // =============================================================
-    // bit masks and positions for {IApplication - ApplicationData - firstPackedData} fields.
-    uint256 internal constant SUBMISSION_DATE_BITMASK = (1 << 40) - 1;
-    uint256 internal constant APPROVAL_DATE_BITMASK = ((1 << 40) - 1) << 40;
-    uint256 internal constant EXPIRATION_DATE_BITMASK = ((1 << 40) - 1) << 80;
-    uint256 internal constant LICENSE_FEE_BITMASK = ((1 << 136) - 1) << 120;
-    uint256 internal constant SUBMISSION_DATE_BITPOS = 0;
+    /// bit masks and positions for {IApplication - ApplicationData - firstPackedData} fields.
+    // mask of an entry in {firstPackedData}. 
+    uint256 internal constant FIRST_PACKED_DATA_ENTRY_BITMASK = (1 << 40) - 1;
     uint256 internal constant APPROVAL_DATE_BITPOS = 40;
     uint256 internal constant EXPIRATION_DATE_BITPOS = 80;
     uint256 internal constant LICENSE_FEE_BITPOS = 120;
 
-    // bit masks and positions for {IApplication - ApplicationData - secondPackedData} fields.
-    uint256 internal constant REPORTING_FREQUENCY_BITMASK = (1 << 32) - 1;
-    uint256 internal constant REPORTING_GRACE_PERIOD_BITMASK = ((1 << 32) - 1) << 32;
-    uint256 internal constant ROYALTY_GRACE_PERIOD_BITMASK = ((1 << 32) - 1) << 64;
-    uint256 internal constant UNTIMELY_REPORTS_BITMASK = ((1 << 8) - 1) << 96;
-    uint256 internal constant UNTIMELY_ROYALTY_PAYMENTS_BITMASK = ((1 << 8) - 1) << 104;
-    uint256 internal constant EXTRA_DATA_BITMASK = ((1 << 144) - 1) << 112;
-    uint256 internal constant REPORTING_FREQUENCY_BITPOS = 0;
+    /// bit masks and positions for {IApplication - ApplicationData - secondPackedData} fields.
+    // mask of an entry in {secondPackedData}.
+    uint256 internal constant SECOND_PACKED_DATA_ENTRY_BITMASK = (1 << 32) - 1;
+    // mask of all 256 bits in {secondPackedData} except for the 32 bits of the royalty grace period.
+    uint256 internal constant ROYALTY_GRACE_PERIOD_COMPLEMENT_BITMASK = (1 << 64) - 1;
+    // mask of all 256 bits in {secondPackedData} except for the 32 bits of the untimely report count.
+    uint256 internal constant UNTIMELY_REPORTS_COMPLEMENT_BITMASK = (1 << 96) - 1;
+    // mask of all 256 bits in {secondPackedData} except for the 32 bits of the untimely royalty payment count.
+    uint256 internal constant UNTIMELY_ROYALTY_PAYMENTS_COMPLEMENT_BITMASK = (1 << 104) - 1;
+    // mask of all 256 bits in {secondPackedData} except for the 144 bits of the extra data.
+    uint256 internal constant EXTRA_DATA_COMPLEMENT_BITMASK = (1 << 112) - 1;
     uint256 internal constant REPORTING_GRACE_PERIOD_BITPOS = 32;
     uint256 internal constant ROYALTY_GRACE_PERIOD_BITPOS = 64;
     uint256 internal constant UNTIMELY_REPORTS_BITPOS = 96;
@@ -102,7 +102,7 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         LicenseAgreement storage licenseAgreement = _licenseAgreement[licensee][applicationHash];
 
         // sets the license agreement's approval date to the current block timestamp.
-        licenseAgreement.data.firstPackedData = (licenseAgreement.data.firstPackedData & ~APPROVAL_DATE_BITMASK) | (block.timestamp << APPROVAL_DATE_BITPOS);
+        licenseAgreement.data.firstPackedData = (licenseAgreement.data.firstPackedData & FIRST_PACKED_DATA_ENTRY_BITMASK) | (block.timestamp << APPROVAL_DATE_BITPOS);
         licenseAgreement.usable = true;
 
         emit ApplicationApproved(licensee, applicationHash, block.timestamp);
@@ -141,7 +141,7 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         LicenseAgreement storage licenseAgreement = _licenseAgreement[licensee][applicationHash];
 
         // update the reporting frequency.
-        licenseAgreement.data.secondPackedData = (licenseAgreement.data.secondPackedData & ~REPORTING_FREQUENCY_BITMASK) | (newFrequency << REPORTING_FREQUENCY_BITPOS);
+        licenseAgreement.data.secondPackedData = (licenseAgreement.data.secondPackedData & SECOND_PACKED_DATA_ENTRY_BITMASK) | newFrequency;
     }
 
     /**
@@ -157,7 +157,7 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         LicenseAgreement storage licenseAgreement = _licenseAgreement[licensee][applicationHash];
 
         // update the reporting grace period.
-        licenseAgreement.data.secondPackedData = (licenseAgreement.data.secondPackedData & ~REPORTING_GRACE_PERIOD_BITMASK) | (newPeriod << REPORTING_GRACE_PERIOD_BITPOS);
+        licenseAgreement.data.secondPackedData = (licenseAgreement.data.secondPackedData & SECOND_PACKED_DATA_ENTRY_BITMASK) | (newPeriod << REPORTING_GRACE_PERIOD_BITPOS);
     }
 
     /**
@@ -173,7 +173,7 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         LicenseAgreement storage licenseAgreement = _licenseAgreement[licensee][applicationHash];
 
         // update the royalty grace period.
-        licenseAgreement.data.secondPackedData = (licenseAgreement.data.secondPackedData & ~ROYALTY_GRACE_PERIOD_BITMASK) | (newPeriod << ROYALTY_GRACE_PERIOD_BITPOS);
+        licenseAgreement.data.secondPackedData = (licenseAgreement.data.secondPackedData & ROYALTY_GRACE_PERIOD_COMPLEMENT_BITMASK) | (newPeriod << ROYALTY_GRACE_PERIOD_BITPOS);
     }
 
     /**
@@ -213,7 +213,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
      */
     function submitApplication(
         bytes32 licenseHash,
-        string calldata appliedTerms,
         uint256 firstPackedData,
         uint256 secondPackedData,
         bytes calldata signature,
@@ -221,10 +220,10 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         string calldata hashSalt
     ) public virtual onlyLicensee {
         // get the license fee
-        uint256 licenseFee = (firstPackedData >> LICENSE_FEE_BITPOS) & LICENSE_FEE_BITMASK;
+        uint256 licenseFee = (firstPackedData >> LICENSE_FEE_BITPOS) & FIRST_PACKED_DATA_ENTRY_BITMASK;
 
         // get the expiration date
-        uint256 expirationDate = (firstPackedData >> EXPIRATION_DATE_BITPOS) & EXPIRATION_DATE_BITMASK;
+        uint256 expirationDate = (firstPackedData >> EXPIRATION_DATE_BITPOS) & FIRST_PACKED_DATA_ENTRY_BITMASK;
 
         // goes through a few checks to ensure that some of the parameters are valid.
         _submitApplicationCheck(licenseFee, expirationDate);
@@ -233,7 +232,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         bytes32 applicationHash = getApplicationHash(
             _msgSender(),
             licenseHash,
-            appliedTerms,
             firstPackedData,
             secondPackedData,
             modifications,
@@ -252,7 +250,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
             id: _getCurrentIndex(),
             data: ApplicationData({
                 licenseHash: licenseHash,
-                appliedTerms: appliedTerms,
                 firstPackedData: firstPackedData,
                 secondPackedData: secondPackedData
             }),
@@ -316,7 +313,7 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         view
         returns (uint256) 
     {
-        return (_licenseAgreement[licensee][applicationHash].data.firstPackedData >> SUBMISSION_DATE_BITPOS) & SUBMISSION_DATE_BITMASK;
+        return _licenseAgreement[licensee][applicationHash].data.firstPackedData & FIRST_PACKED_DATA_ENTRY_BITMASK;
     }
 
     /**
@@ -330,7 +327,7 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         view
         returns (uint256)
     {
-        return (_licenseAgreement[licensee][applicationHash].data.firstPackedData >> APPROVAL_DATE_BITPOS) & APPROVAL_DATE_BITMASK;
+        return (_licenseAgreement[licensee][applicationHash].data.firstPackedData >> APPROVAL_DATE_BITPOS) & FIRST_PACKED_DATA_ENTRY_BITMASK;
     }
 
     /**
@@ -344,7 +341,7 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         view
         returns (uint256)
     {
-        return (_licenseAgreement[licensee][applicationHash].data.firstPackedData >> EXPIRATION_DATE_BITPOS) & EXPIRATION_DATE_BITMASK;
+        return (_licenseAgreement[licensee][applicationHash].data.firstPackedData >> EXPIRATION_DATE_BITPOS) & FIRST_PACKED_DATA_ENTRY_BITMASK;
     }
 
     /**
@@ -358,7 +355,7 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         view
         returns (uint256)
     {
-        return (_licenseAgreement[licensee][applicationHash].data.firstPackedData >> LICENSE_FEE_BITPOS) & LICENSE_FEE_BITMASK;
+        return _licenseAgreement[licensee][applicationHash].data.firstPackedData >> LICENSE_FEE_BITPOS;
     }
 
     /**
@@ -372,7 +369,7 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         view
         returns (uint256)
     {
-        return (_licenseAgreement[licensee][applicationHash].data.secondPackedData >> REPORTING_FREQUENCY_BITPOS) & REPORTING_FREQUENCY_BITMASK;
+        return _licenseAgreement[licensee][applicationHash].data.secondPackedData & SECOND_PACKED_DATA_ENTRY_BITMASK;
     }
 
     /**
@@ -386,7 +383,7 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         view
         returns (uint256)
     {
-        return (_licenseAgreement[licensee][applicationHash].data.secondPackedData >> REPORTING_GRACE_PERIOD_BITPOS) & REPORTING_GRACE_PERIOD_BITMASK;
+        return (_licenseAgreement[licensee][applicationHash].data.secondPackedData >> REPORTING_GRACE_PERIOD_BITPOS) & SECOND_PACKED_DATA_ENTRY_BITMASK;
     }
 
     /**
@@ -400,7 +397,7 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         view
         returns (uint256)
     {
-        return (_licenseAgreement[licensee][applicationHash].data.secondPackedData >> ROYALTY_GRACE_PERIOD_BITPOS) & ROYALTY_GRACE_PERIOD_BITMASK;
+        return (_licenseAgreement[licensee][applicationHash].data.secondPackedData >> ROYALTY_GRACE_PERIOD_BITPOS) & SECOND_PACKED_DATA_ENTRY_BITMASK;
     }
 
     /**
@@ -414,7 +411,7 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         view
         returns (uint256)
     {
-        return (_licenseAgreement[licensee][applicationHash].data.secondPackedData >> UNTIMELY_REPORTS_BITPOS) & UNTIMELY_REPORTS_BITMASK;
+        return (_licenseAgreement[licensee][applicationHash].data.secondPackedData >> UNTIMELY_REPORTS_BITPOS) & SECOND_PACKED_DATA_ENTRY_BITMASK;
     }
 
     /**
@@ -429,7 +426,8 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         LicenseAgreement storage licenseAgreement = _licenseAgreement[licensee][applicationHash];
 
         // increment the untimely reports by 1.
-        licenseAgreement.data.secondPackedData = (licenseAgreement.data.secondPackedData & ~UNTIMELY_REPORTS_BITMASK) | ((licenseAgreement.data.secondPackedData >> UNTIMELY_REPORTS_BITPOS) + 1) << UNTIMELY_REPORTS_BITPOS;
+        licenseAgreement.data.secondPackedData = 
+            (licenseAgreement.data.secondPackedData & UNTIMELY_REPORTS_COMPLEMENT_BITMASK) | ((licenseAgreement.data.secondPackedData >> UNTIMELY_REPORTS_BITPOS) + 1) << UNTIMELY_REPORTS_BITPOS;
     }
 
     /**
@@ -443,7 +441,7 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         view
         returns (uint256)
     {
-        return (_licenseAgreement[licensee][applicationHash].data.secondPackedData >> UNTIMELY_ROYALTY_PAYMENTS_BITPOS) & UNTIMELY_ROYALTY_PAYMENTS_BITMASK;
+        return (_licenseAgreement[licensee][applicationHash].data.secondPackedData >> UNTIMELY_ROYALTY_PAYMENTS_BITPOS) & SECOND_PACKED_DATA_ENTRY_BITMASK;
     }
     
     /**
@@ -458,7 +456,7 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         LicenseAgreement storage licenseAgreement = _licenseAgreement[licensee][applicationHash];
 
         // increment the untimely royalty payments by 1.
-        licenseAgreement.data.secondPackedData = (licenseAgreement.data.secondPackedData & ~UNTIMELY_ROYALTY_PAYMENTS_BITMASK) | ((licenseAgreement.data.secondPackedData >> UNTIMELY_ROYALTY_PAYMENTS_BITPOS) + 1) << UNTIMELY_ROYALTY_PAYMENTS_BITPOS;
+        licenseAgreement.data.secondPackedData = (licenseAgreement.data.secondPackedData & UNTIMELY_ROYALTY_PAYMENTS_COMPLEMENT_BITMASK) | ((licenseAgreement.data.secondPackedData >> UNTIMELY_ROYALTY_PAYMENTS_BITPOS) + 1) << UNTIMELY_ROYALTY_PAYMENTS_BITPOS;
     }
 
     /**
@@ -472,7 +470,7 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         view
         returns (uint256)
     {
-        return (_licenseAgreement[licensee][applicationHash].data.secondPackedData >> EXTRA_DATA_BITPOS) & EXTRA_DATA_BITMASK;
+        return (_licenseAgreement[licensee][applicationHash].data.secondPackedData >> EXTRA_DATA_BITPOS) & SECOND_PACKED_DATA_ENTRY_BITMASK;
     }
 
     /**
@@ -639,7 +637,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     function getApplicationHash(
         address licensee,
         bytes32 licenseHash, 
-        string calldata appliedTerms,
         uint256 firstPackedData, 
         uint256 secondPackedData, 
         bytes calldata modifications, 
@@ -648,14 +645,46 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         return keccak256(
             abi.encodePacked(
                 licensee,
-                licenseHash, 
-                appliedTerms, 
+                licenseHash,
                 firstPackedData, 
                 secondPackedData, 
                 modifications, 
                 hashSalt
             )
         );
+    }
+
+    /**
+     * @dev Packs the specified parameters into two uint256 variables - {firstPackedData} and {secondPackedData}.
+     */
+    function getPackedData(
+        uint256 submissionDate,
+        uint256 approvalDate,
+        uint256 expirationDate,
+        uint256 licenseFee,
+        uint256 reportingFrequency,
+        uint256 reportingGracePeriod,
+        uint256 royaltyGracePeriod,
+        uint256 untimelyReports,
+        uint256 untimelyRoyaltyPayments,
+        uint256 extraData
+    ) public pure returns (uint256 firstPackedData, uint256 secondPackedData) {
+        firstPackedData = 0;
+        secondPackedData = 0;
+        
+        firstPackedData |= submissionDate;
+        firstPackedData |= approvalDate << APPROVAL_DATE_BITPOS;
+        firstPackedData |= expirationDate << EXPIRATION_DATE_BITPOS;
+        firstPackedData |= licenseFee << LICENSE_FEE_BITPOS;
+
+        secondPackedData |= reportingFrequency;
+        secondPackedData |= reportingGracePeriod << REPORTING_GRACE_PERIOD_BITPOS;
+        secondPackedData |= royaltyGracePeriod << ROYALTY_GRACE_PERIOD_BITPOS;
+        secondPackedData |= untimelyReports << UNTIMELY_REPORTS_BITPOS;
+        secondPackedData |= untimelyRoyaltyPayments << UNTIMELY_ROYALTY_PAYMENTS_BITPOS;
+        secondPackedData |= extraData << EXTRA_DATA_BITPOS;
+
+        return (firstPackedData, secondPackedData);
     }
 
     /**

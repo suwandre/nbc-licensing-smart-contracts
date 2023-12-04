@@ -10,14 +10,11 @@ interface IApplication {
     /**
      * @dev A license application's data. Contains the final terms of the license agreement before the licensee signs it.
      *
-     * NOTE: {appliedTerms} contains the full applied terms of the license's base terms, specific to the licensee; licensees are to use this as their main reference.
      * NOTE: All dates and timestamps are in UNIX time; all durations and frequencies specified are in seconds.
      */
     struct ApplicationData {
         // the license hash of the license type the licensee is applying for. see {Permit - getLicenseHash}.
         bytes32 licenseHash;
-        // the URL that leads to the finalized terms and conditions of the license.
-        string appliedTerms;
         // a first packed data instance containing the following values via their bit layout:
         // [0 - 39] - the application's submission date.
         // [40 - 79] - the application's approval date (if approved; else 0).
@@ -65,7 +62,6 @@ interface IApplication {
     function updateLicenseUsable(address licensee, bytes32 applicationHash) external;
     function submitApplication(
         bytes32 licenseHash,
-        string calldata appliedTerms,
         uint256 firstPackedData,
         uint256 secondPackedData,
         bytes calldata signature,
@@ -94,11 +90,22 @@ interface IApplication {
     function getModifications(address licensee, bytes32 applicationHash) external view returns (bytes memory);
     function getApplicationHash(
         address licensee,
-        bytes32 licenseHash, 
-        string calldata appliedTerms,
+        bytes32 licenseHash,
         uint256 firstPackedData, 
         uint256 secondPackedData, 
         bytes calldata modifications, 
         string calldata hashSalt
     ) external pure returns (bytes32);
+    function getPackedData(
+        uint256 submissionDate,
+        uint256 approvalDate,
+        uint256 expirationDate,
+        uint256 licenseFee,
+        uint256 reportingFrequency,
+        uint256 reportingGracePeriod,
+        uint256 royaltyGracePeriod,
+        uint256 untimelyReports,
+        uint256 untimelyRoyaltyPayments,
+        uint256 extraData
+    ) external pure returns (uint256 firstPackedData, uint256 secondPackedData);
 }
