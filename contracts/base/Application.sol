@@ -15,6 +15,9 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
 
+    // the address that receives royalty and other forms of payment from the licensee.
+    address internal _receiver;
+
     // the current application's id.
     // will always increment upwards and will never reset back in case an application is removed.
     // this should be set to 1 in the constructor.
@@ -66,6 +69,15 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     // checks whether the licensee has paid the license fee, else reverts.
     modifier hasPaidFee(address licensee, bytes32 applicationHash) {
         _checkIsFeePaid(licensee, applicationHash);
+        _;
+    }
+
+    // the opposite of `hasPaidFee`; checks whether the licensee has not paid the license fee, else reverts.
+    // this is used purely for `payLicenseFee` to ensure that the licensee hasn't paid the license fee yet and avoid double paying.
+    modifier hasNotPaidFee(address licensee, bytes32 applicationHash) {
+        if (isFeePaid(licensee, applicationHash)) {
+            revert ApplicationAlreadyPaid(licensee, applicationHash);
+        }
         _;
     }
 
@@ -273,6 +285,29 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         _addApplicationIndex();
 
         emit ApplicationSubmitted(_msgSender(), applicationHash, block.timestamp);
+    }
+
+    /**
+     * @dev (For licensees) Pays the license fee to {_receiver} for a license application.
+     *
+     * Only available for license applications that haven't been paid for yet.
+     */
+    function payLicenseFee(bytes32 applicationHash)
+        external
+        virtual
+        payable
+        onlyOwnerOrLicenseOwner(_msgSender(), applicationHash)
+        applicationExists(_msgSender(), applicationHash)
+        hasNotPaidFee(_msgSender(), applicationHash)
+    {
+        // get the license fee amount
+        uint256 licenseFee = _licenseAgreement[_msgSender()][applicationHash].data.firstPackedData >> LICENSE_FEE_BITPOS;
+
+        // pay the license fee.
+        payable(_receiver).transfer(licenseFee);
+
+        // set the fee paid to true.
+        _licenseAgreement[_msgSender()][applicationHash].feePaid = true;
     }
 
     /**

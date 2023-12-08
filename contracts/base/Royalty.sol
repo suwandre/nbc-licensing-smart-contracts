@@ -9,9 +9,6 @@ import "./Application.sol";
  * @dev License revenue report, royalty statement and payment management.
  */
 abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
-    // the address that receives royalty from the licensee.
-    address internal _receiver;
-
     // a mapping from a licensee's address to the application hash to a {LicenseRecord} instance.
     mapping(address => mapping(bytes32 => LicenseRecord)) private _licenseRecord;
 

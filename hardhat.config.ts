@@ -5,6 +5,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 const deployerWallet: string = process.env.SECONDARY_DEPLOYER_WALLET_PVT_KEY ?? '';
+const wallet0x46: string = process.env.WALLET_0x46_PVT_KEY ?? '';
 
 const config: HardhatUserConfig = {
   defaultNetwork: "bnbTestnet",

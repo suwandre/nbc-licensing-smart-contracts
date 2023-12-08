@@ -119,6 +119,11 @@ interface IApplicationErrors {
      * @dev Throws when trying to approve an application when the licensee hasn't paid the license fee.
      */
     error ApplicationNotPaid(address licensee, bytes32 applicationHash);
+    
+    /**
+     * @dev Throws when trying to pay for an application when the application is already paid for.
+     */
+    error ApplicationAlreadyPaid(address licensee, bytes32 applicationHash);
 
     /**
      * @dev Throws when caller is neither one of the owners nor a licensee that owns the specified license application.

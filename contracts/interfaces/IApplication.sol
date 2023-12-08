@@ -68,6 +68,7 @@ interface IApplication {
         bytes calldata modifications,
         string calldata hashSalt
     ) external;
+    function payLicenseFee(bytes32 applicationHash) external payable;
     function removeApplication(address licensee, bytes32 applicationHash, string calldata reason) external;
     function getLicenseAgreement(address licensee, bytes32 applicationHash) external view returns (LicenseAgreement memory);
     function getSubmissionDate(address licensee, bytes32 applicationHash) external view returns (uint256);
