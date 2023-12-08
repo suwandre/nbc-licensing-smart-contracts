@@ -6,11 +6,15 @@ import "../errors/LicenseErrors.sol";
 import "../base/Permit.sol";
 import "../base/Licensee.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /**
  * @dev License application registry and management.
  */
 abstract contract Application is IApplication, IApplicationErrors, Permit, Licensee {
+    using ECDSA for bytes32;
+    using MessageHashUtils for bytes32;
+
     // the current application's id.
     // will always increment upwards and will never reset back in case an application is removed.
     // this should be set to 1 in the constructor.
@@ -202,7 +206,7 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
      * For instance, only applications approved by the licensor will be eligible for license usage.
      * Therefore, any modified/illegitimate applications will be rejected or left unusable.
      *
-     * NOTE: Although a licensee can only apply for a specific license type once, they can technically apply for multiple applications for once license type via this function.
+     * NOTE: Although a licensee can only apply for a specific license type once, they can technically apply for multiple applications for one license type via this function.
      * However, the licensor is obliged to only approve one of the valid applications and leave the rest unusable/rejected.
      * Checks for existing applications for a license type will therefore not be done here.
      *
@@ -238,8 +242,11 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
             hashSalt
         );
 
+        // get the eth signed message.
+        bytes32 messageHash = MessageHashUtils.toEthSignedMessageHash(applicationHash);
+
         // recover the licensee's address from the signature and checks whether it matches the caller's address.
-        address recoveredAddress = ECDSA.recover(applicationHash, signature);
+        address recoveredAddress = ECDSA.recover(messageHash, signature);
 
         if (recoveredAddress != _msgSender()) {
             revert InvalidSignature(recoveredAddress, _msgSender());
