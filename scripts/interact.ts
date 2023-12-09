@@ -15,7 +15,7 @@ async function main() {
 
     const license = await hre.viem.getContractAt(
         "License",
-        "0xb73C4B0a333c203D0DBc38892DA371408C626a0d",
+        "0x0b50EF429b9a1338E85Fa367598538C515F9380e",
         { walletClient }
     );
 
@@ -33,15 +33,23 @@ async function main() {
 
     // console.log(licenseRecord);
 
-    const approveReport = await license.write.approveReport([
-        "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
-        "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df",
-        BigInt(1),
-        BigInt(1702155330),
-        BigInt("30000000000000000")
-    ]);
+    // const royaltyPaymentDeadline = await license.read.getRoyaltyPaymentDeadline([
+    //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
+    //     "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df",
+    //     BigInt(0)
+    // ]);
 
-    console.log(approveReport);
+    // console.log(royaltyPaymentDeadline);
+
+    // const approveReport = await license.write.approveReport([
+    //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
+    //     "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df",
+    //     BigInt(0),
+    //     BigInt(1702155330),
+    //     BigInt("30000000000000000")
+    // ]);
+
+    // console.log(approveReport);
 
     // const addLicense = await license.write.addLicense([
     //     keccak256(toHex("Asset Modification")),
@@ -73,12 +81,12 @@ async function main() {
 
     // console.log(checkAccount);
 
-    // const checkLicenseAgreement = await license.read.getLicenseAgreement([
-    //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
-    //     "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df"
-    // ]);
+    const checkLicenseAgreement = await license.read.getLicenseAgreement([
+        "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
+        "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df"
+    ]);
 
-    // console.log(checkLicenseAgreement);
+    console.log(checkLicenseAgreement);
 
     // const checkLicenseFee = await license.read.getLicenseFee([
     //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",

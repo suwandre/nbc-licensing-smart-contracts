@@ -11,8 +11,8 @@ interface IRoyalty {
     struct LicenseRecord {
         // the licensee's address.
         address licensee;
-        // the license hash of the license type the licensee is applying for. see {Permit - getLicenseHash}.
-        bytes32 licenseHash;
+        // the application hash of the license application.
+        bytes32 applicationHash;
         // the list of revenue reports and royalty payments for this license.
         Report[] reports;
     }

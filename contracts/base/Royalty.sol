@@ -77,6 +77,37 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
     }
 
     /**
+     * @dev Calls {Application - submitApplication} and initializes the licensee's license record for this license application.
+     */
+    function submitApplication(
+        bytes32 licenseHash,
+        uint256 firstPackedData,
+        uint256 secondPackedData,
+        bytes calldata signature,
+        bytes calldata modifications,
+        string calldata hashSalt
+    ) public virtual override onlyLicensee {
+        super.submitApplication(licenseHash, firstPackedData, secondPackedData, signature, modifications, hashSalt);
+
+        // get the application hash
+        bytes32 applicationHash = getApplicationHash(
+            _msgSender(),
+            licenseHash,
+            firstPackedData,
+            secondPackedData,
+            modifications,
+            hashSalt
+        );
+
+        // initialize the licensee's license record
+        _licenseRecord[_msgSender()][applicationHash] = LicenseRecord({
+            licensee: _msgSender(),
+            applicationHash: applicationHash,
+            reports: new Report[](0)
+        });
+    }
+
+    /**
      * @dev (For licensors and license owners) Submits a revenue report for {licensee} for a specific license with the given {applicationHash}.
      */
     function submitReport(address licensee, bytes32 applicationHash, string calldata url)
