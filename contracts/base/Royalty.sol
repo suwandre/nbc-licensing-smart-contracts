@@ -15,13 +15,25 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
     // =============================================================
     //                           CONSTANTS
     // =============================================================
-    // bit masks and positions for {Report.packedData} fields.
-    uint256 internal constant SUBMISSION_TIMESTAMP_BITMASK = (1 << 40) - 1;
-    uint256 internal constant APPROVAL_TIMESTAMP_BITMASK = ((1 << 40) - 1) << 40;
-    uint256 internal constant ROYALTY_PAYMENT_DEADLINE_BITMASK = ((1 << 40) - 1) << 80;
-    uint256 internal constant ROYALTY_PAYMENT_TIMESTAMP_BITMASK = ((1 << 40) - 1) << 120;
-    uint256 internal constant REPORT_CHANGE_TIMESTAMP_BITMASK = ((1 << 40) - 1) << 160;
-    uint256 internal constant REPORT_EXTRA_DATA_BITMASK = ((1 << 56) - 1) << 200;
+    /// bit masks and positions for {Report.packedData} fields.
+    // mask of an entry in {packedData}.
+    uint256 internal constant PACKED_DATA_ENTRY_BITMASK = (1 << 40) - 1;
+    // mask of all 256 bits in {packedData} except for the 40 bits of the royalty payment deadline.
+    uint256 internal constant ROYALTY_PAYMENT_DEADLINE_COMPLEMENT_BITMASK = (1 << 80) - 1;
+    // mask of all 256 bits in {packedData} except for the 40 bits of the royalty payment timestamp.
+    uint256 internal constant ROYALTY_PAYMENT_TIMESTAMP_COMPLEMENT_BITMASK = (1 << 120) - 1;
+    // mask of all 256 bits in {packedData} except for the 40 bits of the report change timestamp.
+    uint256 internal constant REPORT_CHANGE_TIMESTAMP_COMPLEMENT_BITMASK = (1 << 160) - 1;
+    // mask of all 256 bits in {packedData} except for the 56 bits of the report extra data.
+    uint256 internal constant REPORT_EXTRA_DATA_COMPLEMENT_BITMASK = (1 << 200) - 1;
+
+
+    // uint256 internal constant SUBMISSION_TIMESTAMP_BITMASK = (1 << 40) - 1;
+    // uint256 internal constant APPROVAL_TIMESTAMP_BITMASK = ((1 << 40) - 1) << 40;
+    // uint256 internal constant ROYALTY_PAYMENT_DEADLINE_BITMASK = ((1 << 40) - 1) << 80;
+    // uint256 internal constant ROYALTY_PAYMENT_TIMESTAMP_BITMASK = ((1 << 40) - 1) << 120;
+    // uint256 internal constant REPORT_CHANGE_TIMESTAMP_BITMASK = ((1 << 40) - 1) << 160;
+    // uint256 internal constant REPORT_EXTRA_DATA_BITMASK = ((1 << 56) - 1) << 200;
 
     uint256 internal constant SUBMISSION_TIMESTAMP_BITPOS = 0;
     uint256 internal constant APPROVAL_TIMESTAMP_BITPOS = 40;
@@ -92,7 +104,7 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
             Report memory previousReport = licenseRecord.reports[licenseRecord.reports.length - 1];
 
              // get the previous report's submission timestamp
-            uint256 previousSubmissionTimestamp = (previousReport.packedData >> SUBMISSION_TIMESTAMP_BITPOS) & SUBMISSION_TIMESTAMP_BITMASK;
+            uint256 previousSubmissionTimestamp = (previousReport.packedData >> SUBMISSION_TIMESTAMP_BITPOS) & PACKED_DATA_ENTRY_BITMASK;
 
             // if the previous report's submission timestamp is not 0, then we check whether the report was submitted on time.
             // if it's not, then we increment the untimely report count.
@@ -104,7 +116,7 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
             }
         // if no report is found, we assume it's the first report that they are submitting.
         } else {
-            // get the approval date.
+            // get the approval date of the license application.
             uint256 approvalDate = getApprovalDate(licensee, applicationHash);
 
             // even if it's the first report they're submitting, they will get an untimely report count if they submit it after the approval date + reporting frequency + reporting grace period.
@@ -126,6 +138,20 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
 
             emit ReportSubmitted(licensee, applicationHash, 0, block.timestamp);
         }
+    }
+
+    /**
+     * @dev (For licensors and license owners) Gets the license record for {licensee} for a specific license with the given {applicationHash}.
+     */
+    function getLicenseRecord(address licensee, bytes32 applicationHash)
+        public
+        virtual
+        onlyOwnerOrLicenseOwner(licensee, applicationHash)
+        applicationExists(licensee, applicationHash)
+        view
+        returns (LicenseRecord memory)
+    {
+        return _licenseRecord[licensee][applicationHash];
     }
 
     /**
@@ -154,7 +180,7 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
         returns (uint256)
     {
         Report memory report = _licenseRecord[licensee][applicationHash].reports[reportIndex];
-        return (report.packedData >> SUBMISSION_TIMESTAMP_BITPOS) & SUBMISSION_TIMESTAMP_BITMASK;
+        return (report.packedData >> SUBMISSION_TIMESTAMP_BITPOS) & PACKED_DATA_ENTRY_BITMASK;
     }
 
     /**
@@ -169,7 +195,7 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
         returns (uint256)
     {
         Report memory report = _licenseRecord[licensee][applicationHash].reports[reportIndex];
-        return (report.packedData >> APPROVAL_TIMESTAMP_BITPOS) & APPROVAL_TIMESTAMP_BITMASK;
+        return (report.packedData >> APPROVAL_TIMESTAMP_BITPOS) & PACKED_DATA_ENTRY_BITMASK;
     }
 
     /**
@@ -184,7 +210,7 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
         returns (uint256)
     {
         Report memory report = _licenseRecord[licensee][applicationHash].reports[reportIndex];
-        return (report.packedData >> ROYALTY_PAYMENT_DEADLINE_BITPOS) & ROYALTY_PAYMENT_DEADLINE_BITMASK;
+        return (report.packedData >> ROYALTY_PAYMENT_DEADLINE_BITPOS) & PACKED_DATA_ENTRY_BITMASK;
     }
 
     /**
@@ -199,7 +225,7 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
         returns (uint256)
     {
         Report memory report = _licenseRecord[licensee][applicationHash].reports[reportIndex];
-        return (report.packedData >> ROYALTY_PAYMENT_TIMESTAMP_BITPOS) & ROYALTY_PAYMENT_TIMESTAMP_BITMASK;
+        return (report.packedData >> ROYALTY_PAYMENT_TIMESTAMP_BITPOS) & PACKED_DATA_ENTRY_BITMASK;
     }
 
     /**
@@ -214,7 +240,7 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
         returns (uint256)
     {
         Report memory report = _licenseRecord[licensee][applicationHash].reports[reportIndex];
-        return (report.packedData >> REPORT_CHANGE_TIMESTAMP_BITPOS) & REPORT_CHANGE_TIMESTAMP_BITMASK;
+        return (report.packedData >> REPORT_CHANGE_TIMESTAMP_BITPOS) & PACKED_DATA_ENTRY_BITMASK;
     }
 
     /**
@@ -229,7 +255,7 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
         returns (uint256)
     {
         Report memory report = _licenseRecord[licensee][applicationHash].reports[reportIndex];
-        return (report.packedData >> REPORT_EXTRA_DATA_BITPOS) & REPORT_EXTRA_DATA_BITMASK;
+        return (report.packedData >> REPORT_EXTRA_DATA_BITPOS) & PACKED_DATA_ENTRY_BITMASK;
     }
 
     /**
@@ -244,8 +270,13 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
         LicenseRecord storage licenseRecord = _licenseRecord[licensee][applicationHash];
         Report storage report = licenseRecord.reports[reportIndex];
 
+        uint256 packedData = report.packedData;
+
         // update the report's extra data
-        report.packedData |= extraData << REPORT_EXTRA_DATA_BITPOS;
+        packedData = (packedData & REPORT_EXTRA_DATA_COMPLEMENT_BITMASK) | (extraData << REPORT_EXTRA_DATA_BITPOS);
+
+        // recast the packed data back to {report.packedData}
+        report.packedData = packedData;
 
         emit ReportExtraDataChanged(licensee, applicationHash, reportIndex, extraData, block.timestamp);
     }
@@ -271,8 +302,10 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
         // update the report's URL
         report.url = newUrl;
 
+        uint256 packedData = report.packedData;
+
         // update the report's change timestamp
-        report.packedData |= reportChangeTimestamp << REPORT_CHANGE_TIMESTAMP_BITPOS;
+        packedData = (packedData & REPORT_CHANGE_TIMESTAMP_COMPLEMENT_BITMASK) | (reportChangeTimestamp << REPORT_CHANGE_TIMESTAMP_BITPOS);
 
         emit ReportChanged(licensee, applicationHash, reportIndex, reportChangeTimestamp);
     }
@@ -299,11 +332,16 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
 
         uint256 approvalTimestamp = block.timestamp;
 
+        uint256 packedData = report.packedData;
+
         // update the report's approval timestamp
-        report.packedData |= approvalTimestamp << APPROVAL_TIMESTAMP_BITPOS;
+        packedData = (packedData & FIRST_PACKED_DATA_ENTRY_BITMASK) | (approvalTimestamp << APPROVAL_TIMESTAMP_BITPOS);
 
         // update the report's payment deadline
-        report.packedData |= paymentDeadline << ROYALTY_PAYMENT_DEADLINE_BITPOS;
+        packedData = (packedData & ROYALTY_PAYMENT_DEADLINE_COMPLEMENT_BITMASK) | (paymentDeadline << ROYALTY_PAYMENT_DEADLINE_BITPOS);
+
+        // recast the packed data back to {report.packedData}
+        report.packedData = packedData;
 
         // update the report's royalty amount due
         report.amountDue = amountDue;
@@ -329,11 +367,16 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
 
         _transferRoyalty(applicationHash, amount, reportIndex);
 
+        uint256 packedData = report.packedData;
+
         // update the report's royalty payment timestamp
-        report.packedData |= block.timestamp << ROYALTY_PAYMENT_TIMESTAMP_BITPOS;
+        packedData = (packedData & ROYALTY_PAYMENT_TIMESTAMP_COMPLEMENT_BITMASK) | (block.timestamp << ROYALTY_PAYMENT_TIMESTAMP_BITPOS);
+
+        // recast the packed data back to {report.packedData}
+        report.packedData = packedData;
 
         // check the royalty payment deadline.
-        uint256 paymentDeadline = (report.packedData >> ROYALTY_PAYMENT_DEADLINE_BITPOS) & ROYALTY_PAYMENT_DEADLINE_BITMASK;
+        uint256 paymentDeadline = getRoyaltyPaymentDeadline(_msgSender(), applicationHash, reportIndex);
         // get the royalty grace period.
         uint256 royaltyGracePeriod = getRoyaltyGracePeriod(_msgSender(), applicationHash);
 
@@ -355,12 +398,12 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
         Report memory report = record.reports[reportIndex];
 
         // checks whether the report has been approved by checking for the approval timestamp. if it's 0, reverts.
-        if ((report.packedData >> APPROVAL_TIMESTAMP_BITPOS) & APPROVAL_TIMESTAMP_BITMASK == 0) {
+        if ((report.packedData >> APPROVAL_TIMESTAMP_BITPOS) & FIRST_PACKED_DATA_ENTRY_BITMASK == 0) {
             revert ReportNotYetApproved(_msgSender(), applicationHash, reportIndex);
         }
 
         // check whether the royalty has already been paid by checking for the payment timestamp. if it's != 0, revert.
-        if ((report.packedData >> ROYALTY_PAYMENT_TIMESTAMP_BITPOS) & ROYALTY_PAYMENT_TIMESTAMP_BITMASK != 0) {
+        if ((report.packedData >> ROYALTY_PAYMENT_TIMESTAMP_BITPOS) & FIRST_PACKED_DATA_ENTRY_BITMASK != 0) {
             revert RoyaltyAlreadyPaid(_msgSender(), applicationHash, reportIndex);
         }
 
@@ -395,7 +438,7 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
         Report memory report = record.reports[reportCount - 1];
 
         // check for the approval timestamp. if it's not 0, then revert.
-        if ((report.packedData >> APPROVAL_TIMESTAMP_BITPOS) & APPROVAL_TIMESTAMP_BITMASK != 0) {
+        if ((report.packedData >> APPROVAL_TIMESTAMP_BITPOS) & FIRST_PACKED_DATA_ENTRY_BITMASK != 0) {
             revert ReportAlreadyApproved(licensee, applicationHash, record.reports.length - 1);
         }
     }
@@ -413,7 +456,8 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
         }
 
         // get the timestamp of {report}'s submission
-        uint256 submissionTimestamp = (report.packedData >> SUBMISSION_TIMESTAMP_BITPOS) & SUBMISSION_TIMESTAMP_BITMASK;
+        // if report count is 0, we don't have to worry about errors because `report` defaults to a Report struct with default values.
+        uint256 submissionTimestamp = (report.packedData >> SUBMISSION_TIMESTAMP_BITPOS) & FIRST_PACKED_DATA_ENTRY_BITMASK;
 
         // get the reporting frequency
         uint256 reportingFrequency = getReportingFrequency(licensee, applicationHash);

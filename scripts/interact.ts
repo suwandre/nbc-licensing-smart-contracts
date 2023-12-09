@@ -15,24 +15,33 @@ async function main() {
 
     const license = await hre.viem.getContractAt(
         "License",
-        "0xaF33b52078Fae9F14E664aAF296a393d5361A86c",
+        "0xb73C4B0a333c203D0DBc38892DA371408C626a0d",
         { walletClient }
     );
 
     // const checkUsable = await license.read.isLicenseUsable([
     //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
-    //     "0xf0d7702d60c0d6b829889faaf8e2cfb30035a723fdc14eeeeae941737cd3dfe9"
+    //     "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df"
     // ]);
 
     // console.log(checkUsable);
 
-    // const submitReport = await license.write.submitReport([
+    // const licenseRecord = await license.read.getLicenseRecord([
     //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
-    //     "0xf0d7702d60c0d6b829889faaf8e2cfb30035a723fdc14eeeeae941737cd3dfe9",
-    //     "https://url.com"
+    //     "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df"
     // ]);
 
-    // console.log(submitReport);
+    // console.log(licenseRecord);
+
+    const approveReport = await license.write.approveReport([
+        "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
+        "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df",
+        BigInt(1),
+        BigInt(1702155330),
+        BigInt("30000000000000000")
+    ]);
+
+    console.log(approveReport);
 
     // const addLicense = await license.write.addLicense([
     //     keccak256(toHex("Asset Modification")),
@@ -66,7 +75,7 @@ async function main() {
 
     // const checkLicenseAgreement = await license.read.getLicenseAgreement([
     //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
-    //     "0xf0d7702d60c0d6b829889faaf8e2cfb30035a723fdc14eeeeae941737cd3dfe9"
+    //     "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df"
     // ]);
 
     // console.log(checkLicenseAgreement);
@@ -78,12 +87,19 @@ async function main() {
 
     // console.log(checkLicenseFee);
 
-    const approveApplication = await license.write.approveApplication([
-        "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
-        "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df"
-    ]);
+    // const getApplication = await license.read.getLicenseAgreement([
+    //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
+    //     "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df"
+    // ]);
 
-    console.log(approveApplication);
+    // console.log(getApplication);
+
+    // const approveApplication = await license.write.approveApplication([
+    //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
+    //     "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df"
+    // ]);
+
+    // console.log(approveApplication);
 
 
     // const getAcc = await license.read.getAccount([

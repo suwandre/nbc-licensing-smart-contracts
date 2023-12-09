@@ -43,6 +43,7 @@ interface IRoyalty {
     function getReceiver() external view returns (address);
     function setReceiver(address receiver) external;
     function submitReport(address licensee, bytes32 applicationHash, string calldata url) external;
+    function getLicenseRecord(address licensee, bytes32 applicationHash) external view returns (LicenseRecord memory);
     function getReport(address licensee, bytes32 applicationHash, uint256 reportIndex) external view returns (Report memory);
     function getReportSubmissionTimestamp(address licensee, bytes32 applicationHash, uint256 reportIndex) external view returns (uint256);
     function getReportApprovalTimestamp(address licensee, bytes32 applicationHash, uint256 reportIndex) external view returns (uint256);
