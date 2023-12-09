@@ -16,7 +16,7 @@ const config: HardhatUserConfig = {
     bnbTestnet: {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545",
       chainId: 97,
-      accounts: [`0x${deployerWallet}`],
+      accounts: [`0x${wallet0x46}`],
       gasPrice: "auto",
     }
   },

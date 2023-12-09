@@ -15,9 +15,48 @@ async function main() {
 
     const license = await hre.viem.getContractAt(
         "License",
-        "0xD18BFDbdf8491c58068F6E072331167370478895",
+        "0xaF33b52078Fae9F14E664aAF296a393d5361A86c",
         { walletClient }
     );
+
+    // const checkUsable = await license.read.isLicenseUsable([
+    //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
+    //     "0xf0d7702d60c0d6b829889faaf8e2cfb30035a723fdc14eeeeae941737cd3dfe9"
+    // ]);
+
+    // console.log(checkUsable);
+
+    // const submitReport = await license.write.submitReport([
+    //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
+    //     "0xf0d7702d60c0d6b829889faaf8e2cfb30035a723fdc14eeeeae941737cd3dfe9",
+    //     "https://url.com"
+    // ]);
+
+    // console.log(submitReport);
+
+    // const addLicense = await license.write.addLicense([
+    //     keccak256(toHex("Asset Modification")),
+    //     "https://webapp.nbcompany.io/licensing/terms/asset-modification",
+    // ]);
+
+    // const addLicense2 = await license.write.addLicense([
+    //     keccak256(toHex("Existing Asset Usage")),
+    //     "https://webapp.nbcompany.io/licensing/terms/existing-asset-usage",
+    // ]);
+
+    // const addLicense3 = await license.write.addLicense([
+    //     keccak256(toHex("Asset Creation")),
+    //     "https://webapp.nbcompany.io/licensing/terms/asset-creation",
+    // ]);
+
+    // const approveAccount = await license.write.approveAccounts([
+    //     [
+    //         "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
+    //     ]
+    // ]);
+
+    // console.log(approveAccount);
+
 
     // const checkAccount = await license.read.getAccount([
     //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05"
@@ -41,11 +80,10 @@ async function main() {
 
     const approveApplication = await license.write.approveApplication([
         "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
-        "0xf0d7702d60c0d6b829889faaf8e2cfb30035a723fdc14eeeeae941737cd3dfe9"
+        "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df"
     ]);
 
     console.log(approveApplication);
-
 
 
     // const getAcc = await license.read.getAccount([
@@ -53,14 +91,6 @@ async function main() {
     // ]);
 
     // console.log(getAcc);
-
-    // const approveAccount = await license.write.approveAccounts([
-    //     [
-    //         "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
-    //     ]
-    // ]);
-
-    // console.log(approveAccount);
 
     // const testGetPackedData = await license.read.getPackedData([
     //     BigInt(1701694186),
@@ -193,21 +223,6 @@ async function main() {
     // // ]);
 
     // // console.log(checkHash);
-
-    // const addLicense = await license.write.addLicense([
-    //     keccak256(toHex("Asset Modification")),
-    //     "https://webapp.nbcompany.io/licensing/terms/asset-modification",
-    // ]);
-
-    // const addLicense2 = await license.write.addLicense([
-    //     keccak256(toHex("Existing Asset Usage")),
-    //     "https://webapp.nbcompany.io/licensing/terms/existing-asset-usage",
-    // ]);
-
-    // const addLicense3 = await license.write.addLicense([
-    //     keccak256(toHex("Asset Creation")),
-    //     "https://webapp.nbcompany.io/licensing/terms/asset-creation",
-    // ]);
 
     // // const checkHashViem = keccak256(toHex("Asset Modification"));
 

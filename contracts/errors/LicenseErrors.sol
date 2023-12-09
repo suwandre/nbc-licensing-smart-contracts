@@ -191,6 +191,11 @@ interface IRoyaltyErrors {
     error ReportDoesntExist(address licensee, bytes32 applicationHash);
 
     /**
+     * @dev Throws when trying to change the latest report when there are no reports found.
+     */
+    error NoReportsFound(address licensee, bytes32 applicationHash);
+
+    /**
      * @dev Throws when a licensor wants to add an untimely report count when the report is not yet due.
      */
     error UntimelyReportNotRequired(address licensee, bytes32 applicationHash, uint256 reportIndex);

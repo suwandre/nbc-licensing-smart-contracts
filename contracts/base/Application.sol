@@ -128,6 +128,9 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
      * @dev Updates a license's modifications with the specified {modifications}.
      *
      * If the license's modifications already exist, then it will be overwritten by {modifications}.
+     *
+     * NOTE: Once modifications are changed, the {applicationHash} of the license application WILL BE DIFFERENT if fetched via {getApplicationHash} with the new modifications.
+     * Please always input the original {applicationHash} when the application was submitted.
      */
     function addModifications(address licensee, bytes32 applicationHash, bytes calldata modifications)
         public 

@@ -80,18 +80,19 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
         LicenseRecord storage licenseRecord = _licenseRecord[licensee][applicationHash];
         // check if there were previous reports before the new one is submitted.
         // if there is, then we check whether the previous report was submitted on time.
+
+        // get the reporting frequency
+        uint256 reportingFrequency = getReportingFrequency(licensee, applicationHash);
+
+        // get the reporting grace period
+        uint256 reportingGracePeriod = getReportingGracePeriod(licensee, applicationHash);
+
         if (licenseRecord.reports.length > 0) {
             // get the previous report
             Report memory previousReport = licenseRecord.reports[licenseRecord.reports.length - 1];
 
-            // get the previous report's submission timestamp
+             // get the previous report's submission timestamp
             uint256 previousSubmissionTimestamp = (previousReport.packedData >> SUBMISSION_TIMESTAMP_BITPOS) & SUBMISSION_TIMESTAMP_BITMASK;
-
-            // get the reporting frequency
-            uint256 reportingFrequency = getReportingFrequency(licensee, applicationHash);
-
-            // get the reporting grace period
-            uint256 reportingGracePeriod = getReportingGracePeriod(licensee, applicationHash);
 
             // if the previous report's submission timestamp is not 0, then we check whether the report was submitted on time.
             // if it's not, then we increment the untimely report count.
@@ -101,27 +102,30 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
 
                 emit UntimelyReport(licensee, applicationHash, licenseRecord.reports.length - 1, block.timestamp);
             }
+        // if no report is found, we assume it's the first report that they are submitting.
         } else {
-            // if no report is found, we throw.
-            revert ReportDoesntExist(licensee, applicationHash);
+            // get the approval date.
+            uint256 approvalDate = getApprovalDate(licensee, applicationHash);
+
+            // even if it's the first report they're submitting, they will get an untimely report count if they submit it after the approval date + reporting frequency + reporting grace period.
+            if (approvalDate + reportingFrequency + reportingGracePeriod < block.timestamp) {
+                // increment the untimely report count
+                incrementUntimelyReports(licensee, applicationHash);
+
+                emit UntimelyReport(licensee, applicationHash, 0, block.timestamp);
+            }
+
+            // initialize packedData with the submission timestamp.
+            uint256 packedData = block.timestamp;
+
+            licenseRecord.reports.push(Report({
+                amountDue: 0,
+                url: url,
+                packedData: packedData
+            }));
+
+            emit ReportSubmitted(licensee, applicationHash, 0, block.timestamp);
         }
-
-        // initialize packedData; store all the values above into packedData
-        uint256 packedData = 0;
-        packedData |= block.timestamp;
-        packedData |= 0 << APPROVAL_TIMESTAMP_BITPOS;
-        packedData |= 0 << ROYALTY_PAYMENT_DEADLINE_BITPOS;
-        packedData |= 0 << ROYALTY_PAYMENT_TIMESTAMP_BITPOS;
-        packedData |= 0 << REPORT_CHANGE_TIMESTAMP_BITPOS;
-        packedData |= 0 << REPORT_EXTRA_DATA_BITPOS;
-
-        licenseRecord.reports.push(Report({
-            amountDue: 0,
-            url: url,
-            packedData: packedData
-        }));
-
-        emit ReportSubmitted(licensee, applicationHash, licenseRecord.reports.length - 1, block.timestamp);
     }
 
     /**
@@ -381,7 +385,14 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
      */
     function _checkReportChangeable(address licensee, bytes32 applicationHash) private view {
         LicenseRecord memory record = _licenseRecord[licensee][applicationHash];
-        Report memory report = record.reports[record.reports.length - 1];
+        uint256 reportCount = record.reports.length;
+
+        // if there are no reports, then revert.
+        if (reportCount == 0) {
+            revert NoReportsFound(licensee, applicationHash);
+        }
+
+        Report memory report = record.reports[reportCount - 1];
 
         // check for the approval timestamp. if it's not 0, then revert.
         if ((report.packedData >> APPROVAL_TIMESTAMP_BITPOS) & APPROVAL_TIMESTAMP_BITMASK != 0) {
@@ -394,7 +405,12 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
      */
     function _checkNewReportAllowed(address licensee, bytes32 applicationHash) private view {
         LicenseRecord memory record = _licenseRecord[licensee][applicationHash];
-        Report memory report = record.reports[record.reports.length - 1];
+        uint256 reportCount = record.reports.length;
+        Report memory report;
+
+        if (reportCount > 0) {
+            report = record.reports[reportCount - 1];
+        }
 
         // get the timestamp of {report}'s submission
         uint256 submissionTimestamp = (report.packedData >> SUBMISSION_TIMESTAMP_BITPOS) & SUBMISSION_TIMESTAMP_BITMASK;
@@ -406,6 +422,15 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
         if (submissionTimestamp != 0) {
             // if the current timestamp has not exceeded {submissionTimestamp} + {reportingFrequency}, then licensee is not allowed to submit a new report.
             if (submissionTimestamp + reportingFrequency > block.timestamp) {
+                revert NewReportNotYetAllowed(licensee, applicationHash);
+            }
+        // if submission timestamp is 0, we check whether the application approval date + {reportingFrequency} has passed.
+        } else {
+            // get the application approval date
+            uint256 approvalDate = getApprovalDate(licensee, applicationHash);
+
+            // if the current timestamp has not exceeded {approvalDate} + {reportingFrequency}, then licensee is not allowed to submit a new report.
+            if (approvalDate + reportingFrequency > block.timestamp) {
                 revert NewReportNotYetAllowed(licensee, applicationHash);
             }
         }
