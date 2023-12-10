@@ -79,9 +79,7 @@ interface IApplication {
     function getReportingGracePeriod(address licensee, bytes32 applicationHash) external view returns (uint256);
     function getRoyaltyGracePeriod(address licensee, bytes32 applicationHash) external view returns (uint256);
     function getUntimelyReports(address licensee, bytes32 applicationHash) external view returns (uint256);
-    function incrementUntimelyReports(address licensee, bytes32 applicationHash) external;
     function getUntimelyRoyaltyPayments(address licensee, bytes32 applicationHash) external view returns (uint256);
-    function incrementUntimelyRoyaltyPayments(address licensee, bytes32 applicationHash) external;
     function getExtraData(address licensee, bytes32 applicationHash) external view returns (uint256);
     function setExtraData(address licensee, bytes32 applicationHash, uint256 extraData) external;
     function getLicenseId(address licensee, bytes32 applicationHash) external view returns (uint256);

@@ -141,7 +141,7 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
             // if it's not, then we increment the untimely report count.
             if (previousSubmissionTimestamp + reportingFrequency + reportingGracePeriod < block.timestamp) {
                 // increment the untimely report count
-                incrementUntimelyReports(licensee, applicationHash);
+                _incrementUntimelyReports(licensee, applicationHash);
 
                 emit UntimelyReport(licensee, applicationHash, licenseRecord.reports.length - 1, block.timestamp);
             }
@@ -153,7 +153,7 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
             // even if it's the first report they're submitting, they will get an untimely report count if they submit it after the approval date + reporting frequency + reporting grace period.
             if (approvalDate + reportingFrequency + reportingGracePeriod < block.timestamp) {
                 // increment the untimely report count
-                incrementUntimelyReports(licensee, applicationHash);
+                _incrementUntimelyReports(licensee, applicationHash);
 
                 emit UntimelyReport(licensee, applicationHash, 0, block.timestamp);
             }
@@ -386,6 +386,7 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
     function payRoyalty(bytes32 applicationHash, uint256 reportIndex, uint256 amount)
         public
         virtual
+        payable
         onlyOwnerOrLicenseOwner(_msgSender(), applicationHash)
         applicationExists(_msgSender(), applicationHash)
         onlyUsableLicense(_msgSender(), applicationHash)
@@ -414,9 +415,9 @@ abstract contract Royalty is IRoyalty, IRoyaltyErrors, Application {
         // checks whether the royalty payment is untimely. if it is, then increment the untimely royalty payment count.
         // a payment is considered untimely if it has passed the royalty payment deadline + royalty grace period.
         if (block.timestamp > paymentDeadline + royaltyGracePeriod) {
-            // increment the untimely royalty payment count
-            incrementUntimelyRoyaltyPayments(_msgSender(), applicationHash);
-
+            // increment the untimely royalty payment count by 1
+            _incrementUntimelyRoyaltyPayments(_msgSender(), applicationHash);
+            
             emit UntimelyRoyaltyPayment(_msgSender(), applicationHash, reportIndex, block.timestamp);
         }
     }

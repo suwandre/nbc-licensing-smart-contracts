@@ -460,22 +460,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
     }
 
     /**
-     * @dev (For licensors) Increments the {untimelyReports} field within {LicenseAgreement.data.secondPackedData} by 1.
-     */
-    function incrementUntimelyReports(address licensee, bytes32 applicationHash)
-        public
-        virtual
-        onlyOwner
-        applicationExists(licensee, applicationHash)
-    {
-        LicenseAgreement storage licenseAgreement = _licenseAgreement[licensee][applicationHash];
-
-        // increment the untimely reports by 1.
-        licenseAgreement.data.secondPackedData = 
-            (licenseAgreement.data.secondPackedData & UNTIMELY_REPORTS_COMPLEMENT_BITMASK) | ((licenseAgreement.data.secondPackedData >> UNTIMELY_REPORTS_BITPOS) + 1) << UNTIMELY_REPORTS_BITPOS;
-    }
-
-    /**
      * @dev Gets the amount of untimely royalty payments for a license application.
      */
     function getUntimelyRoyaltyPayments(address licensee, bytes32 applicationHash) 
@@ -487,21 +471,6 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         returns (uint256)
     {
         return (_licenseAgreement[licensee][applicationHash].data.secondPackedData >> UNTIMELY_ROYALTY_PAYMENTS_BITPOS) & SECOND_PACKED_DATA_ENTRY_BITMASK;
-    }
-    
-    /**
-     * @dev (For licensors) Increments the {untimelyRoyaltyPayments} field within {LicenseAgreement.data.secondPackedData} by 1.
-     */
-    function incrementUntimelyRoyaltyPayments(address licensee, bytes32 applicationHash)
-        public
-        virtual
-        onlyOwner
-        applicationExists(licensee, applicationHash)
-    {
-        LicenseAgreement storage licenseAgreement = _licenseAgreement[licensee][applicationHash];
-
-        // increment the untimely royalty payments by 1.
-        licenseAgreement.data.secondPackedData = (licenseAgreement.data.secondPackedData & UNTIMELY_ROYALTY_PAYMENTS_COMPLEMENT_BITMASK) | ((licenseAgreement.data.secondPackedData >> UNTIMELY_ROYALTY_PAYMENTS_BITPOS) + 1) << UNTIMELY_ROYALTY_PAYMENTS_BITPOS;
     }
 
     /**
@@ -607,6 +576,46 @@ abstract contract Application is IApplication, IApplicationErrors, Permit, Licen
         returns (bytes memory)
     {
         return _licenseAgreement[licensee][applicationHash].modifications;
+    }
+
+    /**
+     * @dev Increments the {untimelyReports} field within {LicenseAgreement.data.secondPackedData} by 1.
+     */
+    function _incrementUntimelyReports(address licensee, bytes32 applicationHash)
+        internal
+        virtual
+        applicationExists(licensee, applicationHash)
+    {
+        LicenseAgreement storage licenseAgreement = _licenseAgreement[licensee][applicationHash];
+
+        uint256 secondPackedData = licenseAgreement.data.secondPackedData;
+        uint256 untimelyReportsCount = (secondPackedData >> UNTIMELY_REPORTS_BITPOS) & SECOND_PACKED_DATA_ENTRY_BITMASK;
+
+        // increment the untimely reports by 1.
+        secondPackedData = (secondPackedData & UNTIMELY_REPORTS_COMPLEMENT_BITMASK) | ((untimelyReportsCount + 1) << UNTIMELY_REPORTS_BITPOS);
+
+        // update the license agreement's second packed data.
+        licenseAgreement.data.secondPackedData = secondPackedData;
+    }
+    
+    /**
+     * @dev (For licensors) Increments the {untimelyRoyaltyPayments} field within {LicenseAgreement.data.secondPackedData} by 1.
+     */
+    function _incrementUntimelyRoyaltyPayments(address licensee, bytes32 applicationHash)
+        internal
+        virtual
+        applicationExists(licensee, applicationHash)
+    {
+        LicenseAgreement storage licenseAgreement = _licenseAgreement[licensee][applicationHash];
+
+        uint256 secondPackedData = licenseAgreement.data.secondPackedData;
+        uint256 untimelyRoyaltyPaymentsCount = (secondPackedData >> UNTIMELY_ROYALTY_PAYMENTS_BITPOS) & SECOND_PACKED_DATA_ENTRY_BITMASK;
+
+        // increment the untimely royalty payments by 1.
+        secondPackedData = (secondPackedData & UNTIMELY_ROYALTY_PAYMENTS_COMPLEMENT_BITMASK) | ((untimelyRoyaltyPaymentsCount + 1) << UNTIMELY_ROYALTY_PAYMENTS_BITPOS);
+
+        // update the license agreement's second packed data.
+        licenseAgreement.data.secondPackedData = secondPackedData;
     }
 
     /**

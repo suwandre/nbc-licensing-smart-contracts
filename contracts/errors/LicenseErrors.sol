@@ -21,6 +21,11 @@ interface ILicenseeErrors {
     error LicenseeAlreadyExists(address licensee);
 
     /**
+     * @dev Throws when trying to do certain actions on a licensee account when the account is not usable/approved yet.
+     */
+    error LicenseeNotApproved(address licensee);
+
+    /**
      * @dev Throws if the given {licensee} address is invalid (e.g. `address(0)`).
      */
     error InvalidLicenseeAddress(address licensee);

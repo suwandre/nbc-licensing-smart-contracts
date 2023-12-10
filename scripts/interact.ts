@@ -6,6 +6,7 @@ import "@nomicfoundation/hardhat-viem";
 
 async function main() {
     const deployerWallet = privateKeyToAccount(`0x${process.env.SECONDARY_DEPLOYER_WALLET_PVT_KEY}`);
+    const wallet0x46 = privateKeyToAccount(`0x${process.env.WALLET_0x46_PVT_KEY}`);
 
     const walletClient = createWalletClient({
     account: deployerWallet,
@@ -15,9 +16,56 @@ async function main() {
 
     const license = await hre.viem.getContractAt(
         "License",
-        "0x0b50EF429b9a1338E85Fa367598538C515F9380e",
+        "0x45eb0bCa5e5dDA84DF9549053A8cC3407E77D1BE",
         { walletClient }
     );
+
+    // const getRoyaltyDeadline = await license.read.getRoyaltyPaymentDeadline([
+    //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
+    //     "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df",
+    //     BigInt(0),
+    // ]);
+
+    // console.log(getRoyaltyDeadline);
+
+    // const getRoyaltyGracePeriod = await license.read.getRoyaltyGracePeriod([
+    //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
+    //     "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df",
+    // ]);
+
+    // console.log(getRoyaltyGracePeriod);
+
+    // const totalTime = getRoyaltyDeadline + getRoyaltyGracePeriod;
+    // console.log(totalTime);
+
+    const getUntimelyRoyalty = await license.read.getUntimelyRoyaltyPayments([
+        "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
+        "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df"
+    ]);
+
+    console.log(getUntimelyRoyalty);
+
+    // const reportingFrequency = await license.read.getReportingFrequency([
+    //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
+    //     "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df",
+    // ]);
+
+    // console.log(reportingFrequency);
+
+    // const getReport = await license.read.getReport([
+    //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
+    //     "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df",
+    //     BigInt(0)
+    // ]);
+
+    // console.log(getReport);
+    
+    // const checkLicenseAgreement = await license.read.getLicenseAgreement([
+    //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
+    //     "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df"
+    // ]);
+
+    // console.log(checkLicenseAgreement);
 
     // const checkUsable = await license.read.isLicenseUsable([
     //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
@@ -51,6 +99,14 @@ async function main() {
 
     // console.log(approveReport);
 
+    // const payRoyaltyFee = await license.write.payRoyalty([
+    //     "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df",
+    //     BigInt(0),
+    //     BigInt("30000000000000000")
+    // ]);
+
+    // console.log(payRoyaltyFee);
+
     // const addLicense = await license.write.addLicense([
     //     keccak256(toHex("Asset Modification")),
     //     "https://webapp.nbcompany.io/licensing/terms/asset-modification",
@@ -74,19 +130,11 @@ async function main() {
 
     // console.log(approveAccount);
 
-
     // const checkAccount = await license.read.getAccount([
     //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05"
     // ]);
 
     // console.log(checkAccount);
-
-    const checkLicenseAgreement = await license.read.getLicenseAgreement([
-        "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
-        "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df"
-    ]);
-
-    console.log(checkLicenseAgreement);
 
     // const checkLicenseFee = await license.read.getLicenseFee([
     //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
@@ -108,7 +156,6 @@ async function main() {
     // ]);
 
     // console.log(approveApplication);
-
 
     // const getAcc = await license.read.getAccount([
     //     "0x8FbFE537A211d81F90774EE7002ff784E352024a"

@@ -60,5 +60,5 @@ interface IRoyalty {
         uint256 paymentDeadline,
         uint256 amountDue
     ) external;
-    function payRoyalty(bytes32 applicationHash, uint256 reportIndex, uint256 amount) external;
+    function payRoyalty(bytes32 applicationHash, uint256 reportIndex, uint256 amount) external payable;
 }

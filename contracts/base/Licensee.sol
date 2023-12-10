@@ -12,13 +12,13 @@ abstract contract Licensee is MultiOwnable, ILicensee, ILicenseeErrors {
     // a mapping from a licensee's address to their account data.
     mapping(address => LicenseeAccount) private _licenseeAccount;
 
-    // a modifier that checks whether the caller is a licensee.
+    // a modifier that checks whether the caller is a valid (approved/usable) licensee.
     modifier onlyLicensee() {
         _checkLicensee(_msgSender());
         _;
     }
 
-    // a modifier that checks whether the caller is an owner or a licensee.
+    // a modifier that checks whether the caller is an owner or a valid licensee.
     modifier onlyOwnerOrLicensee() {
         if (!isOwner() && !_isLicensee()) {
             revert NotOwnerOrLicensee(_msgSender());
@@ -26,7 +26,7 @@ abstract contract Licensee is MultiOwnable, ILicensee, ILicenseeErrors {
         _;
     }
 
-    // a modifier that checks whether the caller is an owner or the queried for licensee.
+    // a modifier that checks whether the caller is an owner or the queried for valid licensee.
     modifier onlyOwnerOrOwnLicensee(address licensee) {
         if (!isOwner() && _msgSender() != licensee) {
             revert NotOwnerOrOwnLicensee(_msgSender(), licensee);
@@ -174,18 +174,29 @@ abstract contract Licensee is MultiOwnable, ILicensee, ILicenseeErrors {
     /**
      * @dev Checks whether the caller is a licensee.
      *
-     * In order for the caller to be a licensee (regardless of account status), {LicenseeAccount - data} must NOT be empty (i.e. length != 0).
+     * In order for the caller to be a licensee (regardless of account status), {LicenseeAccount - data} must NOT be empty (i.e. length != 0) AND {LicenseeAccount - usable} must be true.
      */
     function _isLicensee() internal virtual view returns (bool) {
         return _licenseeAccount[_msgSender()].data.length > 0;
     }
 
     /**
-     * @dev Calls {_isLicensee} and reverts if the caller is not a licensee.
+     * @dev Checks whether the caller is a licensee and their account is usable.
+     */
+    function _isUsableLicensee() internal virtual view returns (bool) {
+        return _licenseeAccount[_msgSender()].usable;
+    }
+
+    /**
+     * @dev Calls {_isLicensee} and {_isUsableLicensee} and reverts if the caller is not a licensee or their account is not usable.
      */
     function _checkLicensee(address toCheck) internal virtual view {
         if (!_isLicensee()) {
             revert LicenseeDoesntExist(toCheck);
+        }
+
+        if (!_isUsableLicensee()) {
+            revert LicenseeNotApproved(toCheck);
         }
     }
 }
