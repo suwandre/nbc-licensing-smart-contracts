@@ -6,7 +6,7 @@ import "@nomicfoundation/hardhat-viem";
 
 async function main() {
     const deployerWallet = privateKeyToAccount(`0x${process.env.SECONDARY_DEPLOYER_WALLET_PVT_KEY}`);
-    const wallet0x46 = privateKeyToAccount(`0x${process.env.WALLET_0x46_PVT_KEY}`);
+    // const wallet0x46 = privateKeyToAccount(`0x${process.env.WALLET_0x46_PVT_KEY}`);
 
     const walletClient = createWalletClient({
     account: deployerWallet,
@@ -19,6 +19,21 @@ async function main() {
         "0x45eb0bCa5e5dDA84DF9549053A8cC3407E77D1BE",
         { walletClient }
     );
+
+    // const checkisFeePaid = await license.read.isFeePaid([
+    //     "0x8FbFE537A211d81F90774EE7002ff784E352024a",
+    //     "0x676983283a95afcd5d385367a0056c737566d0fb6f690a8c738115e9e0014a6c"
+    // ]);
+
+    // console.log(checkisFeePaid);
+
+    const checkApprovalTimestamp = await license.read.getReportApprovalTimestamp([
+        "0x8FbFE537A211d81F90774EE7002ff784E352024a",
+        "0x676983283a95afcd5d385367a0056c737566d0fb6f690a8c738115e9e0014a6c",
+        BigInt(0)
+    ]);
+
+    console.log(checkApprovalTimestamp);
 
     // const getRoyaltyDeadline = await license.read.getRoyaltyPaymentDeadline([
     //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
@@ -38,12 +53,12 @@ async function main() {
     // const totalTime = getRoyaltyDeadline + getRoyaltyGracePeriod;
     // console.log(totalTime);
 
-    const getUntimelyRoyalty = await license.read.getUntimelyRoyaltyPayments([
-        "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
-        "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df"
-    ]);
+    // const getUntimelyRoyalty = await license.read.getUntimelyRoyaltyPayments([
+    //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
+    //     "0x0c3a296c09e59240e2a877ed16764d8c9175dd20bebe4d5f9c734dfa1e34b1df"
+    // ]);
 
-    console.log(getUntimelyRoyalty);
+    // console.log(getUntimelyRoyalty);
 
     // const reportingFrequency = await license.read.getReportingFrequency([
     //     "0x460107fAB29D57a6926DddC603B7331F4D3bCA05",
