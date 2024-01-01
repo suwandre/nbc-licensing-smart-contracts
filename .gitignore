@@ -5,8 +5,10 @@ coverage
 coverage.json
 typechain
 typechain-types
+/scripts
+/test
 
 # Hardhat files
 cache
 artifacts
-
+hardhat.config.ts
